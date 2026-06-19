@@ -90,7 +90,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-window.addEventListener('load', function(){
 const TERR_ID = "terr-1-kikyogaoka-1banchoA";
 const STATUSES = {
   absent:{label:"不在", color:"#8a8f98"},
@@ -226,8 +225,7 @@ document.getElementById('fileIn').onchange=function(e){
 };
 
 render();
-setTimeout(function(){ map.invalidateSize(); }, 250);
-});
+setTimeout(function(){ map.invalidateSize(); }, 300);
 </script>
 </body>
 </html>
