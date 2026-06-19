@@ -30,7 +30,6 @@
   .hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(31,111,235,.95);
     color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;}
   .house-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:18px;height:18px;}
-  /* popup */
   .lp{min-width:190px;font-size:14px;}
   .lp h4{margin:0 0 6px;font-size:14px;}
   .lp .sts{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
@@ -91,6 +90,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+window.addEventListener('load', function(){
 const TERR_ID = "terr-1-kikyogaoka-1banchoA";
 const STATUSES = {
   absent:{label:"不在", color:"#8a8f98"},
@@ -129,48 +129,48 @@ function updateCount(){ document.getElementById('count').textContent = houses.le
 // ---- マーカー描画 ----
 const layer = L.layerGroup().addTo(map);
 function pinIcon(color){
-  return L.divIcon({className:"",html:`<div class="house-pin" style="background:${color}"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
+  return L.divIcon({className:"",html:'<div class="house-pin" style="background:'+color+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
 }
 function render(){
   layer.clearLayers();
-  houses.forEach(h=>{
+  houses.forEach(function(h){
     const m = L.marker([h.lat,h.lng],{icon:pinIcon(STATUSES[h.status].color)}).addTo(layer);
-    m.bindPopup(()=>popupHtml(h),{closeButton:true});
-    m.on('popupopen',e=>bindPopup(e.popup, h, m));
+    m.bindPopup(function(){return popupHtml(h);},{closeButton:true});
+    m.on('popupopen',function(e){bindPopup(e.popup, h, m);});
   });
   updateCount();
 }
 function popupHtml(h){
   const d = document.createElement('div'); d.className="lp";
-  d.innerHTML = `<h4>家の記録</h4>
-   <div class="sts">${ORDER.map(s=>`<button data-s="${s}" class="${h.status===s?'on':''}" style="${h.status===s?'background:'+STATUSES[s].color:''}">${STATUSES[s].label}</button>`).join('')}</div>
-   <textarea placeholder="メモ（号室・特徴など）">${h.memo||''}</textarea>
-   <a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>
-   <div class="row"><span class="date">${h.date||''}</span><button class="del">削除</button></div>`;
+  d.innerHTML = '<h4>家の記録</h4>'+
+   '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
+   '<textarea placeholder="メモ（号室・特徴など）">'+(h.memo||'')+'</textarea>'+
+   '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
+   '<div class="row"><span class="date">'+(h.date||'')+'</span><button class="del">削除</button></div>';
   return d;
 }
 function bindPopup(popup, h, marker){
   const el = popup.getElement();
-  el.querySelectorAll('.sts button').forEach(b=>b.onclick=()=>{
+  el.querySelectorAll('.sts button').forEach(function(b){b.onclick=function(){
     h.status=b.dataset.s; h.date=today(); save();
     marker.setIcon(pinIcon(STATUSES[h.status].color));
-    el.querySelectorAll('.sts button').forEach(x=>{x.classList.remove('on');x.style.background='';});
+    el.querySelectorAll('.sts button').forEach(function(x){x.classList.remove('on');x.style.background='';});
     b.classList.add('on'); b.style.background=STATUSES[h.status].color;
     el.querySelector('.date').textContent=h.date;
-  });
-  el.querySelector('textarea').oninput=e=>{h.memo=e.target.value; save();};
-  el.querySelector('.del').onclick=()=>{
-    if(confirm('この記録を削除しますか？')){ houses=houses.filter(x=>x.id!==h.id); save(); render(); map.closePopup(); }
+  };});
+  el.querySelector('textarea').oninput=function(e){h.memo=e.target.value; save();};
+  el.querySelector('.del').onclick=function(){
+    if(confirm('この記録を削除しますか？')){ houses=houses.filter(function(x){return x.id!==h.id;}); save(); render(); map.closePopup(); }
   };
 }
-function today(){ const d=new Date(); return `${d.getMonth()+1}/${d.getDate()}`; }
+function today(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
 
 // ---- 操作 ----
 document.getElementById('btnAdd').onclick=function(){
   addMode=!addMode; this.classList.toggle('active',addMode);
   document.getElementById('hint').style.display=addMode?'block':'none';
 };
-map.on('click',e=>{
+map.on('click',function(e){
   if(!addMode) return;
   const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"absent", memo:"", date:today()};
   houses.push(h); save(); render();
@@ -178,44 +178,56 @@ map.on('click',e=>{
 });
 
 document.getElementById('btnLoc').onclick=function(){
+  const btn=this;
   if(!navigator.geolocation){alert('位置情報に対応していません');return;}
-  this.textContent='⏳';
-  navigator.geolocation.getCurrentPosition(p=>{
+  btn.textContent='⏳';
+  navigator.geolocation.getCurrentPosition(function(p){
     const ll=[p.coords.latitude,p.coords.longitude];
     if(!meMarker){
       meMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1f6feb',fillOpacity:1}).addTo(map);
     } else meMarker.setLatLng(ll);
-    map.setView(ll,18); this.textContent='📍';
-  },err=>{alert('現在地を取得できませんでした');this.textContent='📍';},{enableHighAccuracy:true,timeout:8000});
+    map.setView(ll,18); btn.textContent='📍';
+  },function(err){alert('現在地を取得できませんでした');btn.textContent='📍';},{enableHighAccuracy:true,timeout:8000});
 };
 
 // ---- 一覧シート ----
 const sheet=document.getElementById('sheet');
-document.getElementById('btnList').onclick=()=>{renderList();sheet.style.display='flex';};
-document.getElementById('sheetX').onclick=()=>sheet.style.display='none';
-sheet.onclick=e=>{if(e.target===sheet)sheet.style.display='none';};
+document.getElementById('btnList').onclick=function(){renderList();sheet.style.display='flex';};
+document.getElementById('sheetX').onclick=function(){sheet.style.display='none';};
+sheet.onclick=function(e){if(e.target===sheet)sheet.style.display='none';};
 function renderList(){
   const b=document.getElementById('listBody');
   if(!houses.length){b.innerHTML='<div class="empty">まだ記録がありません。➕で家を追加できます。</div>';return;}
   b.innerHTML='';
-  houses.slice().reverse().forEach(h=>{
+  houses.slice().reverse().forEach(function(h){
     const s=STATUSES[h.status];
     const row=document.createElement('div');row.className='litem';
-    row.innerHTML=`<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${s.color}"></span>
-      <span>${h.memo?escapeHtml(h.memo):'(メモなし)'}<div class="memo">${h.date||''}</div></span>
-      <span class="badge" style="background:${s.color}">${s.label}</span>`;
-    row.onclick=()=>{sheet.style.display='none';map.setView([h.lat,h.lng],18);
-      layer.getLayers().forEach(m=>{const ll=m.getLatLng();if(Math.abs(ll.lat-h.lat)<1e-9&&Math.abs(ll.lng-h.lng)<1e-9)m.openPopup();});};
+    row.innerHTML='<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+s.color+'"></span>'+
+      '<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+(h.date||'')+'</div></span>'+
+      '<span class="badge" style="background:'+s.color+'">'+s.label+'</span>';
+    row.onclick=function(){sheet.style.display='none';map.setView([h.lat,h.lng],18);
+      layer.getLayers().forEach(function(m){const ll=m.getLatLng();if(Math.abs(ll.lat-h.lat)<1e-9&&Math.abs(ll.lng-h.lng)<1e-9)m.openPopup();});};
     b.appendChild(row);
   });
 }
-function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function escapeHtml(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 // ---- バックアップ ----
-document.getElementById('btnExport').onclick=()=>{
+document.getElementById('btnExport').onclick=function(){
   const blob=new Blob([JSON.stringify(houses,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='区域1_記録_'+new Date().toISOString().slice(0,10)+'.json';a.click();
 };
-document.getElementById('btnImport').onclick=()=>document.getElementById('fileIn').click();
-docu
+document.getElementById('btnImport').onclick=function(){document.getElementById('fileIn').click();};
+document.getElementById('fileIn').onchange=function(e){
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=function(){try{const d=JSON.parse(r.result);if(Array.isArray(d)){houses=d;save();render();renderList();alert('読み込みました');}}catch(err){alert('読み込めませんでした');}};
+  r.readAsText(f);
+};
+
+render();
+setTimeout(function(){ map.invalidateSize(); }, 250);
+});
+</script>
+</body>
+</html>
