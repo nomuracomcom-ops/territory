@@ -159,7 +159,7 @@ function bindPopup(popup, h, marker){
   };});
   el.querySelector('textarea').oninput=function(e){h.memo=e.target.value; save();};
   el.querySelector('.del').onclick=function(){
-    if(confirm('この記録を削除しますか？')){ houses=houses.filter(function(x){return x.id!==h.id;}); save(); render(); map.closePopup(); }
+    houses=houses.filter(function(x){return x.id!==h.id;}); save(); render(); map.closePopup();
   };
 }
 function today(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
