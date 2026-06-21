@@ -20,10 +20,6 @@ header .no{background:var(--blue);border-radius:6px;padding:2px 9px;font-weight:
 header .name{font-size:15px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 header .count{font-size:12px;opacity:.85;}
 #notice{flex:0 0 auto;}
-.verse{background:#fff7e6;color:#5b4636;padding:9px 12px;font-size:13px;line-height:1.55;display:none;align-items:flex-start;gap:8px;border-bottom:1px solid #f0e2c8;}
-.verse .q{flex:1;}
-.verse .ref{display:block;color:#9a7b3f;font-size:11px;margin-top:3px;}
-.verse .x{color:#c9bda0;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;}
 .revisit-bar{background:var(--blue);color:#fff;padding:9px 12px;font-size:13px;display:none;align-items:center;gap:8px;cursor:pointer;}
 .revisit-bar .ic{font-size:15px;}
 .revisit-bar b{font-weight:700;}
@@ -33,6 +29,7 @@ header .count{font-size:12px;opacity:.85;}
 .toolbar button{width:50px;height:50px;border:none;border-radius:50%;background:var(--panel);
 box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .toolbar button.active{background:var(--blue);color:#fff;}
+.toolbar button#btnDone{background:var(--green);color:#fff;}
 .legend{position:absolute;right:10px;bottom:18px;z-index:1000;background:rgba(255,255,255,.94);
 border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);line-height:1.7;}
 .legend .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px #aaa;}
@@ -66,6 +63,15 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .bulk-t{font-size:12px;color:#666;margin-bottom:8px;}
 .bulk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .bulk-btns button{color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
+.done{position:absolute;inset:0;z-index:1200;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;}
+.done-card{background:#fff;border-radius:18px;max-width:340px;width:100%;padding:26px 22px 22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);animation:pop .3s ease;}
+@keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+.done-emoji{font-size:46px;line-height:1;}
+.done-card h2{margin:10px 0 4px;font-size:22px;color:#1f2937;}
+.done-sub{margin:0 0 16px;font-size:13px;color:#666;}
+.done-verse{background:#f1f7f2;border-radius:12px;padding:14px;color:#2f4636;font-size:15px;line-height:1.6;}
+.done-verse .ref{display:block;color:#5b8c6e;font-size:12px;margin-top:6px;}
+.done-card .close{margin-top:18px;width:100%;border:none;border-radius:10px;background:var(--green);color:#fff;padding:12px;font-size:15px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -76,7 +82,6 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <span class="count" id="count">0件</span>
 </header>
 <div id="notice">
-<div class="verse" id="verse"></div>
 <div class="revisit-bar" id="revisit"></div>
 </div>
 <div id="map"></div>
@@ -87,6 +92,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" title="家を追加">➕</button>
 <button id="btnList" title="一覧">📋</button>
+<button id="btnDone" title="今日はここまで">🏁</button>
 </div>
 <div class="legend">
 <span class="dot" style="background:#f5b400"></span>会えた<br>
@@ -113,6 +119,16 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
 </div>
 </div>
+</div>
+</div>
+
+<div class="done" id="done">
+<div class="done-card">
+<div class="done-emoji">🎉</div>
+<h2>お疲れさまでした！</h2>
+<p class="done-sub" id="doneSummary"></p>
+<div class="done-verse" id="doneVerse"></div>
+<button class="close" id="doneClose">閉じる</button>
 </div>
 </div>
 
@@ -293,50 +309,40 @@ el.onclick=function(){ renderList('revisit'); sheet.style.display='flex'; };
 refreshMap();
 }
 
-// ---- 励みの聖句（日替わり・×で当日非表示）----
-const VERSES=[
-{q:"「良いたよりは，あらゆる国民に宣べ伝えられねばなりません」", ref:"マルコ 13:10"},
-{q:"「行って，人々を弟子としなさい」", ref:"マタイ 28:19"},
+// ---- 今日はここまで（お疲れさま＋誉め言葉の聖句ローテーション）----
+const PRAISE=[
+{q:"「よくやった，善い忠実な奴隷よ」", ref:"マタイ 25:21"},
+{q:"あなたが示した愛と働きを，神は決してお忘れになりません。", ref:"ヘブライ 6:10"},
 {q:"「あなたがたの労苦はむだではありません」", ref:"コリント第一 15:58"},
-{q:"神は，あなたが示した愛と働きを決してお忘れになりません。", ref:"ヘブライ 6:10"},
-{q:"「与えなさい。そうすれば，あなたがたに与えられます」", ref:"ルカ 6:38"},
+{q:"あきらめずに続けたなら，時が来て必ず刈り取ります。", ref:"ガラテア 6:9"},
+{q:"「彼女は，自分にできることをしたのです」", ref:"マルコ 14:8"},
+{q:"あなたの愛は，仲間の心を大いに力づけました。", ref:"フィレモン 1:7"},
+{q:"「立派に戦い，走るべき道のりを走り抜きました」", ref:"テモテ第二 4:7"},
 {q:"「神は快く与える人を愛されます」", ref:"コリント第二 9:7"},
-{q:"あきらめずに続けるなら，時が来て刈り取ります。", ref:"ガラテア 6:9"},
-{q:"「エホバはわたしの力，わたしの盾」", ref:"詩編 28:7"},
-{q:"「わたしは終わりの日までいつもあなた方と共にいます」", ref:"マタイ 28:20"},
-{q:"「恐れてはならない。わたしがあなたを強くする」", ref:"イザヤ 41:10"},
-{q:"「何をするにも，魂をこめてエホバのために働きなさい」", ref:"コロサイ 3:23"},
-{q:"悔い改める一人のために，天では喜びがあります。", ref:"ルカ 15:7"},
-{q:"「収穫は多いが，働き人は少ない」", ref:"マタイ 9:37"},
-{q:"「祈りのうちにたゆまず励みなさい」", ref:"コロサイ 4:2"},
-{q:"「良いたよりを伝える人の足は，なんと麗しいことか」", ref:"ローマ 10:15"},
-{q:"「いつも主の業に満ちあふれていなさい」", ref:"コリント第一 15:58"}
+{q:"エホバは，全き心で仕える人を喜ばれます。", ref:"歴代第一 28:9"},
+{q:"「いつも主にあって喜びなさい」", ref:"フィリピ 4:4"},
+{q:"忠実であること，それが何よりも大切にされます。", ref:"コリント第一 4:2"},
+{q:"あなたの善い行いは，隠れていても父が見ておられます。", ref:"マタイ 6:4"}
 ];
-function dayIndex(){
-const d=new Date();
-const start=new Date(d.getFullYear(),0,0);
-const diff=(d-start)+((start.getTimezoneOffset()-d.getTimezoneOffset())*60000);
-const day=Math.floor(diff/86400000);
-return day % VERSES.length;
+function showDone(){
+const todayStr=today();
+const n=houses.filter(function(h){return h.date===todayStr;}).length;
+document.getElementById('doneSummary').textContent = n>0 ? ('今日は '+n+' 軒を記録しました。') : '今日も活動おつかれさまでした。';
+let idx=parseInt(localStorage.getItem('praiseIdx')||'0',10);
+if(isNaN(idx)||idx<0) idx=0;
+idx=idx % PRAISE.length;
+const v=PRAISE[idx];
+localStorage.setItem('praiseIdx', String((idx+1)%PRAISE.length));
+document.getElementById('doneVerse').innerHTML='<span class="q">'+v.q+'</span><span class="ref">— '+v.ref+'</span>';
+document.getElementById('done').style.display='flex';
 }
-function showVerse(){
-const el=document.getElementById('verse');
-if(!el) return;
-const todayStr=new Date().toISOString().slice(0,10);
-if(localStorage.getItem('verseDismissed')===todayStr){ el.style.display='none'; return; }
-const v=VERSES[dayIndex()];
-el.innerHTML='<div class="q">'+v.q+'<span class="ref">— '+v.ref+'</span></div><span class="x" id="verseX">✕</span>';
-el.style.display='flex';
-document.getElementById('verseX').onclick=function(){
-el.style.display='none';
-localStorage.setItem('verseDismissed', todayStr);
-refreshMap();
-};
-}
+document.getElementById('btnDone').onclick=showDone;
+document.getElementById('doneClose').onclick=function(){document.getElementById('done').style.display='none';};
+document.getElementById('done').onclick=function(e){if(e.target===this)this.style.display='none';};
+
 function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
 
 render();
-showVerse();
 showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
 </script>
