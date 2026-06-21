@@ -92,7 +92,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" title="家を追加">➕</button>
 <button id="btnList" title="一覧">📋</button>
-<button id="btnDone" title="今日はここまで">🏁</button>
+<button id="btnDone" title="今日はここまで">🔚</button>
 </div>
 <div class="legend">
 <span class="dot" style="background:#f5b400"></span>会えた<br>
@@ -124,7 +124,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 
 <div class="done" id="done">
 <div class="done-card">
-<div class="done-emoji">🎉</div>
+<div class="done-emoji">👏</div>
 <h2>お疲れさまでした！</h2>
 <p class="done-sub" id="doneSummary"></p>
 <div class="done-verse" id="doneVerse"></div>
@@ -311,18 +311,18 @@ refreshMap();
 
 // ---- 今日はここまで（お疲れさま＋誉め言葉の聖句ローテーション）----
 const PRAISE=[
-{q:"「よくやった，善い忠実な奴隷よ」", ref:"マタイ 25:21"},
-{q:"あなたが示した愛と働きを，神は決してお忘れになりません。", ref:"ヘブライ 6:10"},
-{q:"「あなたがたの労苦はむだではありません」", ref:"コリント第一 15:58"},
-{q:"あきらめずに続けたなら，時が来て必ず刈り取ります。", ref:"ガラテア 6:9"},
-{q:"「彼女は，自分にできることをしたのです」", ref:"マルコ 14:8"},
-{q:"あなたの愛は，仲間の心を大いに力づけました。", ref:"フィレモン 1:7"},
-{q:"「立派に戦い，走るべき道のりを走り抜きました」", ref:"テモテ第二 4:7"},
-{q:"「神は快く与える人を愛されます」", ref:"コリント第二 9:7"},
-{q:"エホバは，全き心で仕える人を喜ばれます。", ref:"歴代第一 28:9"},
+{q:"「立派にやりました，善い忠実な奴隷よ」", ref:"マタイ 25:21"},
+{q:"神はあなたの行いと愛を忘れません。", ref:"ヘブライ 6:10"},
+{q:"「あなたたちの労苦は無駄ではありません」", ref:"コリント第一 15:58"},
+{q:"諦めなければ，しかるべき時に刈り取ります。", ref:"ガラテア 6:9"},
+{q:"「この人は自分にできることをしました」", ref:"マルコ 14:8"},
+{q:"あなたによって，仲間は元気づけられました。", ref:"フィレモン 1:7"},
+{q:"「立派に戦い，走路を最後まで走りました」", ref:"テモテ第二 4:7"},
+{q:"「神は喜んで与える人を愛します」", ref:"コリント第二 9:7"},
+{q:"涙と共に種をまく人は，喜びの声で刈り取ります。", ref:"詩編 126:5"},
 {q:"「いつも主にあって喜びなさい」", ref:"フィリピ 4:4"},
-{q:"忠実であること，それが何よりも大切にされます。", ref:"コリント第一 4:2"},
-{q:"あなたの善い行いは，隠れていても父が見ておられます。", ref:"マタイ 6:4"}
+{q:"管理人に求められるのは，忠実であることです。", ref:"コリント第一 4:2"},
+{q:"ひそかに見ているあなたの父が報いてくれます。", ref:"マタイ 6:4"}
 ];
 function showDone(){
 const todayStr=today();
