@@ -51,6 +51,10 @@
   .empty{color:#999;text-align:center;padding:24px 0;font-size:13px;}
   .sheet .tools{display:flex;gap:8px;margin-top:14px;}
   .sheet .tools button{flex:1;border:1px solid #ccc;background:#fff;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;}
+  .bulk{margin-top:16px;border-top:1px solid #eee;padding-top:12px;}
+  .bulk-t{font-size:12px;color:#666;margin-bottom:8px;}
+  .bulk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .bulk-btns button{color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -80,6 +84,15 @@
   <div class="card">
     <h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
     <div id="listBody"></div>
+    <div class="bulk">
+      <div class="bulk-t">種類ごとに一括削除（区域を渡すときなどに）</div>
+      <div class="bulk-btns">
+        <button data-s="done" style="background:#2ea043">済を全部消す</button>
+        <button data-s="absent" style="background:#8a8f98">不在を全部消す</button>
+        <button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
+        <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
+      </div>
+    </div>
     <div class="tools">
       <button id="btnExport">バックアップ書き出し</button>
       <button id="btnImport">読み込み</button>
@@ -210,6 +223,17 @@ function renderList(){
   });
 }
 function escapeHtml(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+// ---- 種類ごとに一括削除 ----
+function clearByStatus(st){
+  var n=houses.filter(function(h){return h.status===st;}).length;
+  if(n===0){alert(STATUSES[st].label+'のピンはありません');return;}
+  if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（元に戻せません）')) return;
+  houses=houses.filter(function(h){return h.status!==st;}); save(); render(); renderList();
+}
+document.querySelectorAll('.bulk-btns button').forEach(function(b){
+  b.onclick=function(){clearByStatus(b.dataset.s);};
+});
 
 // ---- バックアップ ----
 document.getElementById('btnExport').onclick=function(){
