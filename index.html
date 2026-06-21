@@ -74,25 +74,25 @@
   <button id="btnList" title="一覧">📋</button>
 </div>
 <div class="legend">
-  <span class="dot" style="background:var(--grey)"></span>不在<br>
-  <span class="dot" style="background:var(--blue)"></span>再訪問<br>
-  <span class="dot" style="background:var(--red)"></span>訪問しない<br>
-  <span class="dot" style="background:var(--green)"></span>済
+  <span class="dot" style="background:#f5b400"></span>会えた<br>
+  <span class="dot" style="background:#1f6feb"></span>再訪問<br>
+  <span class="dot" style="background:#2ea043"></span>投函<br>
+  <span class="dot" style="background:#d9333f"></span>訪問しない
 </div>
 
 <div class="sheet" id="sheet">
   <div class="card">
     <h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
-    <div id="listBody"></div>
     <div class="bulk">
-      <div class="bulk-t">種類ごとに一括削除（区域を渡すときなどに）</div>
+      <div class="bulk-t">種類ごとに一括削除</div>
       <div class="bulk-btns">
-        <button data-s="done" style="background:#2ea043">済を全部消す</button>
-        <button data-s="absent" style="background:#8a8f98">不在を全部消す</button>
+        <button data-s="met" style="background:#f5b400">会えたを全部消す</button>
         <button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
+        <button data-s="posted" style="background:#2ea043">投函を全部消す</button>
         <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
       </div>
     </div>
+    <div id="listBody"></div>
     <div class="tools">
       <button id="btnExport">バックアップ書き出し</button>
       <button id="btnImport">読み込み</button>
@@ -105,12 +105,12 @@
 <script>
 const TERR_ID = "terr-1-kikyogaoka-1banchoA";
 const STATUSES = {
-  absent:{label:"不在", color:"#8a8f98"},
+  met:{label:"会えた", color:"#f5b400"},
   revisit:{label:"再訪問", color:"#1f6feb"},
-  dnc:{label:"訪問しない", color:"#d9333f"},
-  done:{label:"済", color:"#2ea043"}
+  posted:{label:"投函", color:"#2ea043"},
+  dnc:{label:"訪問しない", color:"#d9333f"}
 };
-const ORDER = ["absent","revisit","dnc","done"];
+const ORDER = ["met","revisit","posted","dnc"];
 
 // 区域境界（KML由来 / lng,lat → lat,lng に変換）
 const BOUNDARY = [
@@ -146,7 +146,7 @@ function pinIcon(color){
 function render(){
   layer.clearLayers();
   houses.forEach(function(h){
-    const m = L.marker([h.lat,h.lng],{icon:pinIcon(STATUSES[h.status].color)}).addTo(layer);
+    const m = L.marker([h.lat,h.lng],{icon:pinIcon((STATUSES[h.status]||{color:'#999'}).color)}).addTo(layer);
     m.bindPopup(function(){return popupHtml(h);},{closeButton:true});
     m.on('popupopen',function(e){bindPopup(e.popup, h, m);});
   });
@@ -184,7 +184,7 @@ document.getElementById('btnAdd').onclick=function(){
 };
 map.on('click',function(e){
   if(!addMode) return;
-  const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"absent", memo:"", date:today()};
+  const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"met", memo:"", date:today()};
   houses.push(h); save(); render();
   const m=layer.getLayers().slice(-1)[0]; if(m) m.openPopup();
 });
@@ -212,7 +212,7 @@ function renderList(){
   if(!houses.length){b.innerHTML='<div class="empty">まだ記録がありません。➕で家を追加できます。</div>';return;}
   b.innerHTML='';
   houses.slice().reverse().forEach(function(h){
-    const s=STATUSES[h.status];
+    const s=STATUSES[h.status]||{label:'不明',color:'#999'};
     const row=document.createElement('div');row.className='litem';
     row.innerHTML='<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+s.color+'"></span>'+
       '<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+(h.date||'')+'</div></span>'+
