@@ -102,8 +102,14 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="territories.js"></script>
 <script>
-const TERR_ID = "terr-1-kikyogaoka-1banchoA";
+const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
+const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
+const TERR_ID = "terr-"+TPARAM;
+document.title = "区域"+TPARAM+" "+TDATA.name;
+document.querySelector('header .no').textContent = "区域 "+TPARAM;
+document.querySelector('header .name').textContent = TDATA.name;
 const STATUSES = {
   met:{label:"会えた", color:"#f5b400"},
   revisit:{label:"再訪問", color:"#1f6feb"},
@@ -112,13 +118,8 @@ const STATUSES = {
 };
 const ORDER = ["met","revisit","posted","dnc"];
 
-// 区域境界（KML由来 / lng,lat → lat,lng に変換）
-const BOUNDARY = [
-  [34.644431652137904,136.1164212226868],
-  [34.64508922884992,136.11488699913028],
-  [34.64268397324679,136.11359953880313],
-  [34.642229394165476,136.1150908470154]
-];
+// 区域境界（territories.js から取得）
+const BOUNDARY = TDATA.boundary;
 
 // ---- 地図初期化（地理院地図タイル）----
 const map = L.map('map',{zoomControl:false}).setView([34.6437,136.1150],17);
