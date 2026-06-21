@@ -157,7 +157,7 @@ function popupHtml(h){
   const d = document.createElement('div'); d.className="lp";
   d.innerHTML = '<h4>家の記録</h4>'+
    '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
-   '<textarea placeholder="メモ（号室・特徴など）">'+(h.memo||'')+'</textarea>'+
+   '<textarea placeholder="メモ">'+(h.memo||'')+'</textarea>'+
    '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
    '<div class="row"><span class="date">'+(h.date||'')+'</span><button class="del">削除</button></div>';
   return d;
