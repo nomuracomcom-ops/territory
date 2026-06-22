@@ -177,7 +177,8 @@ var lg=document.querySelector('.legend'); if(lg) lg.style.display='none';
 var nt=document.getElementById('notice'); if(nt) nt.style.display='none';
 var congPoly=null;
 if(window.CONGREGATION && window.CONGREGATION.boundary && window.CONGREGATION.boundary.length){
-congPoly=L.polygon(window.CONGREGATION.boundary,{color:"#1f6feb",weight:3,dashArray:"8 6",fill:false}).addTo(map);
+L.polygon(window.CONGREGATION.boundary,{color:"#ffffff",weight:9,opacity:0.95,fill:false}).addTo(map);
+congPoly=L.polygon(window.CONGREGATION.boundary,{color:"#6a1b9a",weight:4.5,opacity:1,fillColor:"#6a1b9a",fillOpacity:0.05}).addTo(map);
 }
 var all=window.TERRITORIES||{}, polys=[];
 Object.keys(all).forEach(function(k){
