@@ -8,128 +8,99 @@
 <title>区域1 桔梗が丘1番町A</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-:root{
---grey:#8a8f98; --blue:#1f6feb; --red:#d9333f; --green:#2ea043;
---bar:#1f2937; --panel:#ffffff;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;height:100%;font-family:system-ui,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;}
-#app{display:flex;flex-direction:column;height:100dvh;}
-header{background:var(--bar);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px;}
-header .no{background:var(--blue);border-radius:6px;padding:2px 9px;font-weight:700;font-size:15px;}
-header .name{font-size:15px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-header .count{font-size:12px;opacity:.85;}
-#notice{flex:0 0 auto;}
-.revisit-bar{background:var(--blue);color:#fff;padding:9px 12px;font-size:13px;display:none;align-items:center;gap:8px;cursor:pointer;}
-.revisit-bar .ic{font-size:15px;}
-.revisit-bar b{font-weight:700;}
-.revisit-bar .go{margin-left:auto;font-size:12px;opacity:.92;white-space:nowrap;}
-#map{flex:1;width:100%;background:#e8e8e8;}
-.toolbar{position:absolute;left:10px;bottom:18px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
-.toolbar button{width:50px;height:50px;border:none;border-radius:50%;background:var(--panel);
-box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.toolbar button.active{background:var(--blue);color:#fff;}
-.toolbar button#btnDone{background:#f5a300;color:#fff;}
-.legend{position:absolute;right:10px;bottom:18px;z-index:1000;background:rgba(255,255,255,.94);
-border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);line-height:1.7;}
-.legend .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px #aaa;}
-.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(31,111,235,.95);
-color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;}
-.house-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:18px;height:18px;}
-.lp{min-width:190px;font-size:14px;}
-.lp h4{margin:0 0 6px;font-size:14px;}
-.lp .sts{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-.lp .sts button{flex:1;min-width:56px;border:1px solid #ccc;border-radius:6px;padding:6px 4px;font-size:12px;background:#fff;cursor:pointer;}
-.lp .sts button.on{color:#fff;border-color:transparent;font-weight:700;}
-.lp textarea{width:100%;border:1px solid #ccc;border-radius:6px;padding:6px;font-size:13px;resize:vertical;min-height:38px;font-family:inherit;}
-.lp .gmap{display:block;text-align:center;margin-top:8px;background:#34a853;color:#fff;text-decoration:none;
-border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
-.lp .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
-.lp .del{color:var(--red);background:none;border:none;font-size:13px;cursor:pointer;}
-.lp .date{font-size:11px;color:#888;}
-.sheet{position:absolute;inset:0;z-index:1100;background:rgba(0,0,0,.4);display:none;align-items:flex-end;}
-.sheet .card{background:#fff;width:100%;max-height:75%;overflow:auto;border-radius:16px 16px 0 0;padding:14px 16px 24px;}
-.sheet h3{margin:4px 0 12px;font-size:16px;display:flex;justify-content:space-between;}
-.sheet h3 .x{color:#888;cursor:pointer;}
-.listnote{font-size:12px;color:#1f6feb;background:#eef4ff;border-radius:8px;padding:7px 10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-.listnote a{color:#1f6feb;cursor:pointer;text-decoration:underline;}
-.litem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;font-size:14px;cursor:pointer;}
-.litem .memo{color:#666;font-size:12px;}
-.litem .badge{font-size:11px;padding:2px 7px;border-radius:10px;color:#fff;margin-left:auto;white-space:nowrap;}
-.empty{color:#999;text-align:center;padding:24px 0;font-size:13px;}
-.sheet .tools{display:flex;gap:8px;margin-top:14px;}
-.sheet .tools button{flex:1;border:1px solid #ccc;background:#fff;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;}
-.bulk{margin-top:16px;border-top:1px solid #eee;padding-top:12px;}
-.bulk-t{font-size:12px;color:#666;margin-bottom:8px;}
-.bulk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.bulk-btns button{color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
-.done{position:absolute;inset:0;z-index:1200;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;}
-.done-card{background:#fff;border-radius:18px;max-width:340px;width:100%;padding:26px 22px 22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);animation:pop .3s ease;}
-@keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
-.done-emoji{font-size:46px;line-height:1;}
-.done-card h2{margin:10px 0 4px;font-size:22px;color:#1f2937;}
-.done-sub{margin:0 0 16px;font-size:13px;color:#666;}
-.done-verse{background:#f1f7f2;border-radius:12px;padding:14px;color:#2f4636;font-size:15px;line-height:1.6;}
-.done-verse .ref{display:block;color:#5b8c6e;font-size:12px;margin-top:6px;}
-.done-card .close{margin-top:18px;width:100%;border:none;border-radius:10px;background:var(--green);color:#fff;padding:12px;font-size:15px;font-weight:600;cursor:pointer;}
+  :root{
+    --grey:#8a8f98; --blue:#1f6feb; --red:#d9333f; --green:#2ea043;
+    --bar:#1f2937; --panel:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;font-family:system-ui,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;}
+  #app{display:flex;flex-direction:column;height:100dvh;}
+  header{background:var(--bar);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px;}
+  header .no{background:var(--blue);border-radius:6px;padding:2px 9px;font-weight:700;font-size:15px;}
+  header .name{font-size:15px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  header .count{font-size:12px;opacity:.85;}
+  #map{flex:1;width:100%;background:#e8e8e8;}
+  .toolbar{position:absolute;left:10px;bottom:18px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
+  .toolbar button{width:50px;height:50px;border:none;border-radius:50%;background:var(--panel);
+    box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .toolbar button.active{background:var(--blue);color:#fff;}
+  .legend{position:absolute;right:10px;bottom:18px;z-index:1000;background:rgba(255,255,255,.94);
+    border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);line-height:1.7;}
+  .legend .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px #aaa;}
+  .hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(31,111,235,.95);
+    color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;}
+  .house-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:18px;height:18px;}
+  .numlbl{background:#fff;border:2px solid #d9333f;color:#d9333f;font-weight:700;font-size:14px;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;}
+  .lp{min-width:190px;font-size:14px;}
+  .lp h4{margin:0 0 6px;font-size:14px;}
+  .lp .sts{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+  .lp .sts button{flex:1;min-width:56px;border:1px solid #ccc;border-radius:6px;padding:6px 4px;font-size:12px;background:#fff;cursor:pointer;}
+  .lp .sts button.on{color:#fff;border-color:transparent;font-weight:700;}
+  .lp textarea{width:100%;border:1px solid #ccc;border-radius:6px;padding:6px;font-size:13px;resize:vertical;min-height:38px;font-family:inherit;}
+  .lp .gmap{display:block;text-align:center;margin-top:8px;background:#34a853;color:#fff;text-decoration:none;
+    border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
+  .lp .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .lp .del{color:var(--red);background:none;border:none;font-size:13px;cursor:pointer;}
+  .lp .date{font-size:11px;color:#888;}
+  .sheet{position:absolute;inset:0;z-index:1100;background:rgba(0,0,0,.4);display:none;align-items:flex-end;}
+  .sheet .card{background:#fff;width:100%;max-height:75%;overflow:auto;border-radius:16px 16px 0 0;padding:14px 16px 24px;}
+  .sheet h3{margin:4px 0 12px;font-size:16px;display:flex;justify-content:space-between;}
+  .sheet h3 .x{color:#888;cursor:pointer;}
+  .litem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;font-size:14px;cursor:pointer;}
+  .litem .memo{color:#666;font-size:12px;}
+  .litem .badge{font-size:11px;padding:2px 7px;border-radius:10px;color:#fff;margin-left:auto;white-space:nowrap;}
+  .empty{color:#999;text-align:center;padding:24px 0;font-size:13px;}
+  .sheet .tools{display:flex;gap:8px;margin-top:14px;}
+  .sheet .tools button{flex:1;border:1px solid #ccc;background:#fff;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;}
+  .bulk{margin-top:16px;border-top:1px solid #eee;padding-top:12px;}
+  .bulk-t{font-size:12px;color:#666;margin-bottom:8px;}
+  .bulk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .bulk-btns button{color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
 <div id="app">
-<header>
-<span class="no">区域 1</span>
-<span class="name">桔梗が丘1番町A</span>
-<span class="count" id="count">0件</span>
-</header>
-<div id="notice">
-<div class="revisit-bar" id="revisit"></div>
-</div>
-<div id="map"></div>
+  <header>
+    <span class="no">区域 1</span>
+    <span class="name">桔梗が丘1番町A</span>
+    <span class="count" id="count">0件</span>
+  </header>
+  <div id="map"></div>
 </div>
 
 <div class="hint" id="hint">地図をタップして家を記録</div>
 <div class="toolbar">
-<button id="btnLoc" title="現在地">📍</button>
-<button id="btnAdd" title="家を追加">➕</button>
-<button id="btnList" title="一覧">📋</button>
-<button id="btnDone" title="今日はここまで">🔚</button>
+  <button id="btnLoc" title="現在地">📍</button>
+  <button id="btnAdd" title="家を追加">➕</button>
+  <button id="btnList" title="一覧">📋</button>
+  <button id="btnAll" title="全体図">🗺️</button>
 </div>
 <div class="legend">
-<span class="dot" style="background:#f5b400"></span>会えた<br>
-<span class="dot" style="background:#1f6feb"></span>再訪問<br>
-<span class="dot" style="background:#2ea043"></span>投函<br>
-<span class="dot" style="background:#d9333f"></span>訪問しない
+  <span class="dot" style="background:#f5b400"></span>会えた<br>
+  <span class="dot" style="background:#1f6feb"></span>再訪問<br>
+  <span class="dot" style="background:#2ea043"></span>投函<br>
+  <span class="dot" style="background:#d9333f"></span>訪問しない
 </div>
 
 <div class="sheet" id="sheet">
-<div class="card">
-<h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
-<div id="listBody"></div>
-<div class="tools">
-<button id="btnExport">バックアップ書き出し</button>
-<button id="btnImport">読み込み</button>
-</div>
-<input type="file" id="fileIn" accept="application/json" style="display:none">
-<div class="bulk">
-<div class="bulk-t">種類ごとに一括削除</div>
-<div class="bulk-btns">
-<button data-s="met" style="background:#f5b400">会えたを全部消す</button>
-<button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
-<button data-s="posted" style="background:#2ea043">投函を全部消す</button>
-<button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
-</div>
-</div>
-</div>
-</div>
-
-<div class="done" id="done">
-<div class="done-card">
-<div class="done-emoji">👏</div>
-<h2>お疲れさまでした！</h2>
-<p class="done-sub" id="doneSummary"></p>
-<div class="done-verse" id="doneVerse"></div>
-<button class="close" id="doneClose">閉じる</button>
-</div>
+  <div class="card">
+    <h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
+    <div class="bulk">
+      <div class="bulk-t">種類ごとに一括削除</div>
+      <div class="bulk-btns">
+        <button data-s="met" style="background:#f5b400">会えたを全部消す</button>
+        <button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
+        <button data-s="posted" style="background:#2ea043">投函を全部消す</button>
+        <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
+      </div>
+    </div>
+    <div id="listBody"></div>
+    <div class="tools">
+      <button id="btnExport">バックアップ書き出し</button>
+      <button id="btnImport">読み込み</button>
+    </div>
+    <input type="file" id="fileIn" accept="application/json" style="display:none">
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -137,15 +108,23 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
 const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
+const ISALL = (TPARAM==='all');
 const TERR_ID = "terr-"+TPARAM;
-document.title = "区域"+TPARAM+" "+TDATA.name;
-document.querySelector('header .no').textContent = "区域 "+TPARAM;
-document.querySelector('header .name').textContent = TDATA.name;
+if(ISALL){
+  document.title = "区域全体図";
+  document.querySelector('header .no').textContent = "全体図";
+  document.querySelector('header .name').textContent = (window.CONGREGATION&&window.CONGREGATION.name)||"会衆 区域全体";
+}else{
+  document.title = "区域"+TPARAM+" "+TDATA.name;
+  document.querySelector('header .no').textContent = "区域 "+TPARAM;
+  document.querySelector('header .name').textContent = TDATA.name;
+}
+var btnAll=document.getElementById('btnAll'); if(btnAll) btnAll.onclick=function(){location.href='?t=all';};
 const STATUSES = {
-met:{label:"会えた", color:"#f5b400"},
-revisit:{label:"再訪問", color:"#1f6feb"},
-posted:{label:"投函", color:"#2ea043"},
-dnc:{label:"訪問しない", color:"#d9333f"}
+  met:{label:"会えた", color:"#f5b400"},
+  revisit:{label:"再訪問", color:"#1f6feb"},
+  posted:{label:"投函", color:"#2ea043"},
+  dnc:{label:"訪問しない", color:"#d9333f"}
 };
 const ORDER = ["met","revisit","posted","dnc"];
 
@@ -156,8 +135,31 @@ const BOUNDARY = TDATA.boundary;
 const map = L.map('map',{zoomControl:false,maxZoom:21}).setView([34.6437,136.1150],17);
 L.control.zoom({position:'topright'}).addTo(map);
 L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{
-maxZoom:21, maxNativeZoom:18, attribution:"地理院地図（国土地理院）"
+  maxZoom:21, maxNativeZoom:18, attribution:"地理院地図（国土地理院）"
 }).addTo(map);
+if(ISALL){ buildOverview(); } else { buildTerritory(); }
+
+function buildOverview(){
+  var tb=document.querySelector('.toolbar'); if(tb) tb.style.display='none';
+  var lg=document.querySelector('.legend'); if(lg) lg.style.display='none';
+  if(window.CONGREGATION && window.CONGREGATION.boundary && window.CONGREGATION.boundary.length){
+    L.polygon(window.CONGREGATION.boundary,{color:"#555",weight:2,dashArray:"6 5",fill:false}).addTo(map);
+  }
+  var all=window.TERRITORIES||{}, polys=[];
+  Object.keys(all).forEach(function(k){
+    var t=all[k]; if(!t.boundary||!t.boundary.length) return;
+    var pg=L.polygon(t.boundary,{color:"#d9333f",weight:2,fillColor:"#d9333f",fillOpacity:.10}).addTo(map);
+    pg.on('click',function(){location.href='?t='+k;});
+    var lbl=L.marker(pg.getBounds().getCenter(),{icon:L.divIcon({className:'',html:'<div class="numlbl">'+k+'</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map);
+    lbl.on('click',function(){location.href='?t='+k;});
+    polys.push(pg);
+  });
+  if(polys.length){ var b=polys[0].getBounds(); polys.forEach(function(p){b.extend(p.getBounds());}); map.fitBounds(b,{padding:[60,60]}); }
+  else { map.setView([34.6437,136.1150],14); }
+  setTimeout(function(){ map.invalidateSize(); }, 300);
+}
+
+function buildTerritory(){
 const poly = L.polygon(BOUNDARY,{color:"#d9333f",weight:3,fillColor:"#d9333f",fillOpacity:.10}).addTo(map);
 map.fitBounds(poly.getBounds(),{padding:[40,40]});
 
@@ -167,71 +169,71 @@ let addMode = false;
 let meMarker = null;
 
 function load(){ try{return JSON.parse(localStorage.getItem(TERR_ID))||[]}catch(e){return []} }
-function save(){ localStorage.setItem(TERR_ID, JSON.stringify(houses)); updateCount(); showRevisit(); }
+function save(){ localStorage.setItem(TERR_ID, JSON.stringify(houses)); updateCount(); }
 function updateCount(){ document.getElementById('count').textContent = houses.length+"件"; }
 
 // ---- マーカー描画 ----
 const layer = L.layerGroup().addTo(map);
 function pinIcon(color){
-return L.divIcon({className:"",html:'<div class="house-pin" style="background:'+color+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+  return L.divIcon({className:"",html:'<div class="house-pin" style="background:'+color+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
 }
 function render(){
-layer.clearLayers();
-houses.forEach(function(h){
-const m = L.marker([h.lat,h.lng],{icon:pinIcon((STATUSES[h.status]||{color:'#999'}).color)}).addTo(layer);
-m.bindPopup(function(){return popupHtml(h);},{closeButton:true});
-m.on('popupopen',function(e){bindPopup(e.popup, h, m);});
-});
-updateCount();
+  layer.clearLayers();
+  houses.forEach(function(h){
+    const m = L.marker([h.lat,h.lng],{icon:pinIcon((STATUSES[h.status]||{color:'#999'}).color)}).addTo(layer);
+    m.bindPopup(function(){return popupHtml(h);},{closeButton:true});
+    m.on('popupopen',function(e){bindPopup(e.popup, h, m);});
+  });
+  updateCount();
 }
 function popupHtml(h){
-const d = document.createElement('div'); d.className="lp";
-d.innerHTML = '<h4>家の記録</h4>'+
-'<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
-'<textarea placeholder="メモ">'+(h.memo||'')+'</textarea>'+
-'<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
-'<div class="row"><span class="date">'+(h.date||'')+'</span><button class="del">削除</button></div>';
-return d;
+  const d = document.createElement('div'); d.className="lp";
+  d.innerHTML = '<h4>家の記録</h4>'+
+   '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
+   '<textarea placeholder="メモ">'+(h.memo||'')+'</textarea>'+
+   '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
+   '<div class="row"><span class="date">'+(h.date||'')+'</span><button class="del">削除</button></div>';
+  return d;
 }
 function bindPopup(popup, h, marker){
-const el = popup.getElement();
-el.querySelectorAll('.sts button').forEach(function(b){b.onclick=function(){
-h.status=b.dataset.s; h.date=today(); save();
-marker.setIcon(pinIcon(STATUSES[h.status].color));
-el.querySelectorAll('.sts button').forEach(function(x){x.classList.remove('on');x.style.background='';});
-b.classList.add('on'); b.style.background=STATUSES[h.status].color;
-el.querySelector('.date').textContent=h.date;
-};});
-el.querySelector('textarea').oninput=function(e){h.memo=e.target.value; save();};
-el.querySelector('.del').onclick=function(){
-houses=houses.filter(function(x){return x.id!==h.id;}); save(); render(); map.closePopup();
-};
+  const el = popup.getElement();
+  el.querySelectorAll('.sts button').forEach(function(b){b.onclick=function(){
+    h.status=b.dataset.s; h.date=today(); save();
+    marker.setIcon(pinIcon(STATUSES[h.status].color));
+    el.querySelectorAll('.sts button').forEach(function(x){x.classList.remove('on');x.style.background='';});
+    b.classList.add('on'); b.style.background=STATUSES[h.status].color;
+    el.querySelector('.date').textContent=h.date;
+  };});
+  el.querySelector('textarea').oninput=function(e){h.memo=e.target.value; save();};
+  el.querySelector('.del').onclick=function(){
+    houses=houses.filter(function(x){return x.id!==h.id;}); save(); render(); map.closePopup();
+  };
 }
 function today(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
 
 // ---- 操作 ----
 document.getElementById('btnAdd').onclick=function(){
-addMode=!addMode; this.classList.toggle('active',addMode);
-document.getElementById('hint').style.display=addMode?'block':'none';
+  addMode=!addMode; this.classList.toggle('active',addMode);
+  document.getElementById('hint').style.display=addMode?'block':'none';
 };
 map.on('click',function(e){
-if(!addMode) return;
-const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"met", memo:"", date:today()};
-houses.push(h); save(); render();
-const m=layer.getLayers().slice(-1)[0]; if(m) m.openPopup();
+  if(!addMode) return;
+  const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"met", memo:"", date:today()};
+  houses.push(h); save(); render();
+  const m=layer.getLayers().slice(-1)[0]; if(m) m.openPopup();
 });
 
 document.getElementById('btnLoc').onclick=function(){
-const btn=this;
-if(!navigator.geolocation){alert('位置情報に対応していません');return;}
-btn.textContent='⏳';
-navigator.geolocation.getCurrentPosition(function(p){
-const ll=[p.coords.latitude,p.coords.longitude];
-if(!meMarker){
-meMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1f6feb',fillOpacity:1}).addTo(map);
-} else meMarker.setLatLng(ll);
-map.setView(ll,18); btn.textContent='📍';
-},function(err){alert('現在地を取得できませんでした');btn.textContent='📍';},{enableHighAccuracy:true,timeout:8000});
+  const btn=this;
+  if(!navigator.geolocation){alert('位置情報に対応していません');return;}
+  btn.textContent='⏳';
+  navigator.geolocation.getCurrentPosition(function(p){
+    const ll=[p.coords.latitude,p.coords.longitude];
+    if(!meMarker){
+      meMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1f6feb',fillOpacity:1}).addTo(map);
+    } else meMarker.setLatLng(ll);
+    map.setView(ll,18); btn.textContent='📍';
+  },function(err){alert('現在地を取得できませんでした');btn.textContent='📍';},{enableHighAccuracy:true,timeout:8000});
 };
 
 // ---- 一覧シート ----
@@ -239,112 +241,50 @@ const sheet=document.getElementById('sheet');
 document.getElementById('btnList').onclick=function(){renderList();sheet.style.display='flex';};
 document.getElementById('sheetX').onclick=function(){sheet.style.display='none';};
 sheet.onclick=function(e){if(e.target===sheet)sheet.style.display='none';};
-function renderList(filter){
-const b=document.getElementById('listBody');
-let items = houses.slice().reverse();
-if(filter){ items = items.filter(function(h){return h.status===filter;}); }
-let head='';
-if(filter){
-const s=STATUSES[filter]||{label:''};
-head='<div class="listnote"><span>'+s.label+'のみ表示中（'+items.length+'件）</span><a id="showAll">すべて表示</a></div>';
-}
-if(!items.length){
-b.innerHTML=head+'<div class="empty">'+(filter?'該当する記録はありません。':'まだ記録がありません。➕で家を追加できます。')+'</div>';
-const sa=document.getElementById('showAll'); if(sa) sa.onclick=function(){renderList();};
-return;
-}
-let html=head;
-items.forEach(function(h){
-const s=STATUSES[h.status]||{label:'不明',color:'#999'};
-html+='<div class="litem" data-lat="'+h.lat+'" data-lng="'+h.lng+'">'+
-'<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+s.color+'"></span>'+
-'<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+(h.date||'')+'</div></span>'+
-'<span class="badge" style="background:'+s.color+'">'+s.label+'</span></div>';
-});
-b.innerHTML=html;
-const sa=document.getElementById('showAll'); if(sa) sa.onclick=function(){renderList();};
-b.querySelectorAll('.litem').forEach(function(row){
-row.onclick=function(){
-const lat=parseFloat(row.dataset.lat), lng=parseFloat(row.dataset.lng);
-sheet.style.display='none'; map.setView([lat,lng],18);
-layer.getLayers().forEach(function(m){const ll=m.getLatLng();if(Math.abs(ll.lat-lat)<1e-9&&Math.abs(ll.lng-lng)<1e-9)m.openPopup();});
-};
-});
+function renderList(){
+  const b=document.getElementById('listBody');
+  if(!houses.length){b.innerHTML='<div class="empty">まだ記録がありません。➕で家を追加できます。</div>';return;}
+  b.innerHTML='';
+  houses.slice().reverse().forEach(function(h){
+    const s=STATUSES[h.status]||{label:'不明',color:'#999'};
+    const row=document.createElement('div');row.className='litem';
+    row.innerHTML='<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+s.color+'"></span>'+
+      '<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+(h.date||'')+'</div></span>'+
+      '<span class="badge" style="background:'+s.color+'">'+s.label+'</span>';
+    row.onclick=function(){sheet.style.display='none';map.setView([h.lat,h.lng],18);
+      layer.getLayers().forEach(function(m){const ll=m.getLatLng();if(Math.abs(ll.lat-h.lat)<1e-9&&Math.abs(ll.lng-h.lng)<1e-9)m.openPopup();});};
+    b.appendChild(row);
+  });
 }
 function escapeHtml(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 // ---- 種類ごとに一括削除 ----
 function clearByStatus(st){
-var n=houses.filter(function(h){return h.status===st;}).length;
-if(n===0){alert(STATUSES[st].label+'のピンはありません');return;}
-if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（元に戻せません）')) return;
-houses=houses.filter(function(h){return h.status!==st;}); save(); render(); renderList();
+  var n=houses.filter(function(h){return h.status===st;}).length;
+  if(n===0){alert(STATUSES[st].label+'のピンはありません');return;}
+  if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（元に戻せません）')) return;
+  houses=houses.filter(function(h){return h.status!==st;}); save(); render(); renderList();
 }
 document.querySelectorAll('.bulk-btns button').forEach(function(b){
-b.onclick=function(){clearByStatus(b.dataset.s);};
+  b.onclick=function(){clearByStatus(b.dataset.s);};
 });
 
 // ---- バックアップ ----
 document.getElementById('btnExport').onclick=function(){
-const blob=new Blob([JSON.stringify(houses,null,2)],{type:'application/json'});
-const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-a.download='区域'+TPARAM+'_記録_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  const blob=new Blob([JSON.stringify(houses,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='区域1_記録_'+new Date().toISOString().slice(0,10)+'.json';a.click();
 };
 document.getElementById('btnImport').onclick=function(){document.getElementById('fileIn').click();};
 document.getElementById('fileIn').onchange=function(e){
-const f=e.target.files[0];if(!f)return;const r=new FileReader();
-r.onload=function(){try{const d=JSON.parse(r.result);if(Array.isArray(d)){houses=d;save();render();renderList();alert('読み込みました');}}catch(err){alert('読み込めませんでした');}};
-r.readAsText(f);
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=function(){try{const d=JSON.parse(r.result);if(Array.isArray(d)){houses=d;save();render();renderList();alert('読み込みました');}}catch(err){alert('読み込めませんでした');}};
+  r.readAsText(f);
 };
 
-// ---- 戻る家リマインド（再訪問の件数を起動時に表示）----
-function showRevisit(){
-const el=document.getElementById('revisit');
-if(!el) return;
-const n=houses.filter(function(h){return h.status==='revisit';}).length;
-if(n===0){ el.style.display='none'; el.onclick=null; refreshMap(); return; }
-el.innerHTML='<span class="ic">🔔</span><span>再訪問の家が <b>'+n+'</b> 件あります</span><span class="go">一覧で見る ›</span>';
-el.style.display='flex';
-el.onclick=function(){ renderList('revisit'); sheet.style.display='flex'; };
-refreshMap();
-}
-
-// ---- 今日はここまで（お疲れさま＋誉め言葉の聖句ローテーション）----
-const PRAISE=[
-{q:"「立派にやりました，善い忠実な奴隷よ」", ref:"マタイ 25:21"},
-{q:"神はあなたの行いと愛を忘れません。", ref:"ヘブライ 6:10"},
-{q:"「あなたたちの労苦は無駄ではありません」", ref:"コリント第一 15:58"},
-{q:"諦めなければ，しかるべき時に刈り取ります。", ref:"ガラテア 6:9"},
-{q:"「この人は自分にできることをしました」", ref:"マルコ 14:8"},
-{q:"あなたによって，仲間は元気づけられました。", ref:"フィレモン 1:7"},
-{q:"「立派に戦い，走路を最後まで走りました」", ref:"テモテ第二 4:7"},
-{q:"「神は喜んで与える人を愛します」", ref:"コリント第二 9:7"},
-{q:"涙と共に種をまく人は，喜びの声で刈り取ります。", ref:"詩編 126:5"},
-{q:"「いつも主にあって喜びなさい」", ref:"フィリピ 4:4"},
-{q:"管理人に求められるのは，忠実であることです。", ref:"コリント第一 4:2"},
-{q:"ひそかに見ているあなたの父が報いてくれます。", ref:"マタイ 6:4"}
-];
-function showDone(){
-const todayStr=today();
-const n=houses.filter(function(h){return h.date===todayStr;}).length;
-document.getElementById('doneSummary').textContent = n>0 ? ('今日は '+n+' 軒を記録しました。') : '今日も活動おつかれさまでした。';
-let idx=parseInt(localStorage.getItem('praiseIdx')||'0',10);
-if(isNaN(idx)||idx<0) idx=0;
-idx=idx % PRAISE.length;
-const v=PRAISE[idx];
-localStorage.setItem('praiseIdx', String((idx+1)%PRAISE.length));
-document.getElementById('doneVerse').innerHTML='<span class="q">'+v.q+'</span><span class="ref">— '+v.ref+'</span>';
-document.getElementById('done').style.display='flex';
-}
-document.getElementById('btnDone').onclick=showDone;
-document.getElementById('doneClose').onclick=function(){document.getElementById('done').style.display='none';};
-document.getElementById('done').onclick=function(e){if(e.target===this)this.style.display='none';};
-
-function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
-
 render();
-showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
+}
 </script>
 </body>
 </html>
