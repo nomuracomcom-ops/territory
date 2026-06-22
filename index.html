@@ -175,8 +175,9 @@ function buildOverview(){
 var tb=document.querySelector('.toolbar'); if(tb) tb.style.display='none';
 var lg=document.querySelector('.legend'); if(lg) lg.style.display='none';
 var nt=document.getElementById('notice'); if(nt) nt.style.display='none';
+var congPoly=null;
 if(window.CONGREGATION && window.CONGREGATION.boundary && window.CONGREGATION.boundary.length){
-L.polygon(window.CONGREGATION.boundary,{color:"#555",weight:2,dashArray:"6 5",fill:false}).addTo(map);
+congPoly=L.polygon(window.CONGREGATION.boundary,{color:"#1f6feb",weight:3,dashArray:"8 6",fill:false}).addTo(map);
 }
 var all=window.TERRITORIES||{}, polys=[];
 Object.keys(all).forEach(function(k){
@@ -187,8 +188,9 @@ var lbl=L.marker(pg.getBounds().getCenter(),{icon:L.divIcon({className:'',html:'
 lbl.on('click',function(){location.href='?t='+k;});
 polys.push(pg);
 });
-if(polys.length){ var b=polys[0].getBounds(); polys.forEach(function(p){b.extend(p.getBounds());}); map.fitBounds(b,{padding:[60,60]}); }
-else { map.setView([34.6437,136.1150],14); }
+var fit=congPoly?congPoly.getBounds():null;
+polys.forEach(function(p){ if(fit){fit.extend(p.getBounds());} else {fit=p.getBounds();} });
+if(fit){ map.fitBounds(fit,{padding:[30,30]}); } else { map.setView([34.6437,136.1150],14); }
 setTimeout(function(){ map.invalidateSize(); }, 300);
 }
 
