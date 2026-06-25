@@ -36,7 +36,7 @@ border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0
 .hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(31,111,235,.95);
 color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;}
 .house-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:18px;height:18px;}
-.terr-label{background:var(--blue);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);}
+.terr-label{background:var(--red);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);}
 .lp{min-width:190px;font-size:14px;}
 .lp h4{margin:0 0 6px;font-size:14px;}
 .lp .sts{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
@@ -174,7 +174,7 @@ function buildOverview(){
   Object.keys(T).forEach(function(num){
     const t = T[num];
     if(!t.boundary || !t.boundary.length) return;
-    const p = L.polygon(t.boundary,{color:"#1f6feb",weight:2.5,fillColor:"#1f6feb",fillOpacity:.28}).addTo(map);
+    const p = L.polygon(t.boundary,{color:"#d9333f",weight:2.5,fillColor:"#d9333f",fillOpacity:.28}).addTo(map);
     p.on('click',function(){ location.search = '?t='+num; });
     // 重心（単純平均）にラベル
     let la=0, lo=0;
