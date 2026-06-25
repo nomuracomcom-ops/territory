@@ -82,6 +82,16 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .svc-item .svc-del{margin-left:auto;border:none;background:none;color:#d9333f;font-size:20px;line-height:1;cursor:pointer;padding:0 6px;}
 .sec-title{font-size:13px;font-weight:700;color:#555;margin:4px 0 8px;}
 .sec-title.div{border-top:1px solid #eee;margin-top:18px;padding-top:14px;}
+.ov-listbtn{display:none;position:absolute;left:50%;transform:translateX(-50%);top:54px;z-index:1000;border:none;border-radius:22px;padding:10px 18px;font-size:14px;font-weight:700;background:#fff;color:#1f2937;box-shadow:0 2px 10px rgba(0,0,0,.3);cursor:pointer;}
+.ov-sum{background:#f4f6f8;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:10px;color:#3a4654;}
+.ov-sum b{font-size:15px;color:#1e7a34;}
+.ov-item{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #eee;font-size:15px;cursor:pointer;}
+.ov-item .num{background:#d9333f;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 auto;font-size:14px;}
+.ov-item .nm{flex:1;}
+.ov-badge{font-size:12px;padding:3px 10px;border-radius:12px;font-weight:600;white-space:nowrap;}
+.ov-badge.free{background:#e6f4ea;color:#1e7a34;}
+.ov-badge.used{background:#eceff1;color:#637381;}
+.ov-badge.na{background:#f3f0ff;color:#6b5bd1;}
 </style>
 </head>
 <body>
@@ -137,6 +147,15 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 
 <button id="btnSvc" class="svc-pill">▶ 伝道スタート</button>
+<button id="btnOvList" class="ov-listbtn">📋 区域一覧</button>
+
+<div class="sheet" id="ovSheet">
+<div class="card">
+<h3>区域一覧 <span class="x" id="ovX">✕</span></h3>
+<div class="ov-sum" id="ovSum"></div>
+<div id="ovBody"></div>
+</div>
+</div>
 
 <div class="done" id="done">
 <div class="done-card">
@@ -150,6 +169,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js"></script>
+<script src="status.js"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
 const ISALL = (TPARAM === 'all');
@@ -201,6 +221,33 @@ function buildOverview(){
   });
   if(bounds) map.fitBounds(bounds,{padding:[30,30]});
   setTimeout(function(){ map.invalidateSize(); }, 300);
+
+  // ---- 区域一覧（状態バッジ付き。状態は status.js の window.TERR_STATUS から）----
+  const ovBtn=document.getElementById('btnOvList');
+  ovBtn.style.display='block';
+  const ovSheet=document.getElementById('ovSheet');
+  ovBtn.onclick=function(){ renderOv(); ovSheet.style.display='flex'; };
+  document.getElementById('ovX').onclick=function(){ ovSheet.style.display='none'; };
+  ovSheet.onclick=function(e){ if(e.target===ovSheet) ovSheet.style.display='none'; };
+  function renderOv(){
+    const TT=window.TERRITORIES||{}, SS=window.TERR_STATUS||{};
+    const nums=Object.keys(TT).sort(function(a,b){return parseInt(a,10)-parseInt(b,10);});
+    let free=0;
+    const rows=nums.map(function(n){
+      const st=SS[n]||''; let cls='na', lab='未設定';
+      if(st==='空き'){ cls='free'; lab='空き'; free++; }
+      else if(st==='貸出中'){ cls='used'; lab='貸出中'; }
+      else if(st){ cls='used'; lab=st; }
+      return '<div class="ov-item" data-n="'+n+'"><div class="num">'+n+'</div>'+
+        '<div class="nm">'+(TT[n].name||('区域'+n))+'</div>'+
+        '<span class="ov-badge '+cls+'">'+lab+'</span></div>';
+    }).join('');
+    document.getElementById('ovSum').innerHTML='全 '+nums.length+' 区域 ・ 空き <b>'+free+'</b>';
+    document.getElementById('ovBody').innerHTML=rows||'<div class="empty">区域がありません。</div>';
+    document.getElementById('ovBody').querySelectorAll('.ov-item').forEach(function(r){
+      r.onclick=function(){ location.search='?t='+r.dataset.n; };
+    });
+  }
 }
 
 // ====== 各区域ビュー ======
