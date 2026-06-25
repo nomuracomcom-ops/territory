@@ -73,6 +73,14 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .done-verse{background:#f1f7f2;border-radius:12px;padding:14px;color:#2f4636;font-size:15px;line-height:1.6;}
 .done-verse .ref{display:block;color:#5b8c6e;font-size:12px;margin-top:6px;}
 .done-card .close{margin-top:18px;width:100%;border:none;border-radius:10px;background:var(--green);color:#fff;padding:12px;font-size:15px;font-weight:600;cursor:pointer;}
+.svc-pill{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:1000;border:none;border-radius:24px;padding:12px 20px;font-size:15px;font-weight:700;color:#fff;background:var(--green);box-shadow:0 3px 12px rgba(0,0,0,.4);cursor:pointer;white-space:nowrap;}
+.svc-pill.running{background:var(--red);}
+.svc-sum{background:#eef7f0;border:1px solid #cce8d4;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px;color:#1f3a29;}
+.svc-sum b{font-size:16px;}
+.svc-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #eee;font-size:14px;}
+.svc-item .d{font-weight:600;}
+.svc-item .sub{color:#666;font-size:12px;margin-top:2px;}
+.svc-item .svc-del{margin-left:auto;border:none;background:none;color:#d9333f;font-size:20px;line-height:1;cursor:pointer;padding:0 6px;}
 </style>
 </head>
 <body>
@@ -95,6 +103,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnList" title="一覧">📋</button>
 <button id="btnDone" title="今日はここまで">🔚</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
+<button id="btnSvcList" title="奉仕記録">📖</button>
 </div>
 <div class="legend">
 <span class="dot" style="background:#f5b400"></span>会えた<br>
@@ -121,6 +130,16 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
 </div>
 </div>
+</div>
+</div>
+
+<button id="btnSvc" class="svc-pill">▶ 伝道スタート</button>
+
+<div class="sheet" id="svcSheet">
+<div class="card">
+<h3>奉仕記録 <span class="x" id="svcX">✕</span></h3>
+<div class="svc-sum" id="svcSum"></div>
+<div id="svcBody"></div>
 </div>
 </div>
 
@@ -153,6 +172,7 @@ function buildOverview(){
   document.querySelector('.toolbar').style.display = 'none';
   document.querySelector('.legend').style.display = 'none';
   document.getElementById('notice').style.display = 'none';
+  var _pill = document.getElementById('btnSvc'); if(_pill) _pill.style.display='none';
 
   const map = L.map('map',{zoomControl:false,maxZoom:21}).setView([34.62,136.16],12);
   L.control.zoom({position:'topright'}).addTo(map);
@@ -393,6 +413,81 @@ document.getElementById('doneClose').onclick=function(){document.getElementById(
 document.getElementById('done').onclick=function(e){if(e.target===this)this.style.display='none';};
 
 function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
+
+// ---- 伝道スタート/終了（奉仕記録：日付・時間帯・所要時間。端末内・個人通算、区域番号タグ付き）----
+const SVC_LOG='svc-log', SVC_ACTIVE='svc-active';
+function svcLoad(){ try{return JSON.parse(localStorage.getItem(SVC_LOG))||[]}catch(e){return []} }
+function svcSave(a){ localStorage.setItem(SVC_LOG, JSON.stringify(a)); }
+function svcActive(){ try{return JSON.parse(localStorage.getItem(SVC_ACTIVE))||null}catch(e){return null} }
+function svcSetActive(o){ if(o){localStorage.setItem(SVC_ACTIVE,JSON.stringify(o));} else {localStorage.removeItem(SVC_ACTIVE);} }
+function pad2(n){ return (n<10?'0':'')+n; }
+function ymd(ms){ const d=new Date(ms); return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+const SVC_WD=['日','月','火','水','木','金','土'];
+function fmtDate(ms){ const d=new Date(ms); return (d.getMonth()+1)+'/'+d.getDate()+'('+SVC_WD[d.getDay()]+')'; }
+function fmtTime(ms){ const d=new Date(ms); return d.getHours()+':'+pad2(d.getMinutes()); }
+function fmtDur(min){ const h=Math.floor(min/60), m=min%60; return (h>0?h+'時間':'')+m+'分'; }
+function elapsed(ms){ let s=Math.floor((Date.now()-ms)/1000); const h=Math.floor(s/3600); s-=h*3600; const m=Math.floor(s/60); s-=m*60; return h+':'+pad2(m)+':'+pad2(s); }
+
+const svcBtn=document.getElementById('btnSvc');
+let svcTimer=null;
+function svcPaint(){
+  const a=svcActive();
+  if(a){
+    svcBtn.classList.add('running');
+    svcBtn.textContent='■ 伝道終了 ・ '+elapsed(a.start);
+    if(!svcTimer) svcTimer=setInterval(svcPaint,1000);
+  } else {
+    svcBtn.classList.remove('running');
+    svcBtn.textContent='▶ 伝道スタート';
+    if(svcTimer){ clearInterval(svcTimer); svcTimer=null; }
+  }
+}
+svcBtn.onclick=function(){
+  const a=svcActive();
+  if(!a){
+    svcSetActive({start:Date.now(), terr:TPARAM});
+    svcPaint();
+  } else {
+    const end=Date.now();
+    const min=Math.max(1, Math.round((end-a.start)/60000));
+    const log=svcLoad();
+    log.push({id:Date.now(), date:ymd(a.start), start:a.start, end:end, min:min, terr:a.terr||TPARAM});
+    svcSave(log);
+    svcSetActive(null);
+    svcPaint();
+    renderSvc();
+    document.getElementById('svcSheet').style.display='flex';
+  }
+};
+
+const svcSheet=document.getElementById('svcSheet');
+document.getElementById('btnSvcList').onclick=function(){ renderSvc(); svcSheet.style.display='flex'; };
+document.getElementById('svcX').onclick=function(){ svcSheet.style.display='none'; };
+svcSheet.onclick=function(e){ if(e.target===svcSheet) svcSheet.style.display='none'; };
+function renderSvc(){
+  const log=svcLoad().slice().sort(function(a,b){return b.start-a.start;});
+  const now=new Date(); const ym=now.getFullYear()+'-'+pad2(now.getMonth()+1);
+  const thisM=log.filter(function(x){return (x.date||'').slice(0,7)===ym;});
+  const days=new Set(thisM.map(function(x){return x.date;})).size;
+  const mins=thisM.reduce(function(s,x){return s+(x.min||0);},0);
+  document.getElementById('svcSum').innerHTML='今月の奉仕：<b>'+days+'</b> 日 ・ 合計 <b>'+fmtDur(mins)+'</b>';
+  const b=document.getElementById('svcBody');
+  if(!log.length){ b.innerHTML='<div class="empty">まだ奉仕記録がありません。「▶ 伝道スタート」を押すと記録が始まります。</div>'; return; }
+  b.innerHTML=log.map(function(x){
+    return '<div class="svc-item"><div><div class="d">'+fmtDate(x.start)+'　'+fmtTime(x.start)+'〜'+fmtTime(x.end)+'</div>'+
+      '<div class="sub">'+fmtDur(x.min)+(x.terr?' ・ 区域'+x.terr:'')+'</div></div>'+
+      '<button class="svc-del" data-id="'+x.id+'">×</button></div>';
+  }).join('');
+  b.querySelectorAll('.svc-del').forEach(function(btn){
+    btn.onclick=function(){
+      if(!confirm('この奉仕記録を削除しますか？')) return;
+      const id=parseInt(btn.dataset.id,10);
+      svcSave(svcLoad().filter(function(x){return x.id!==id;}));
+      renderSvc();
+    };
+  });
+}
+svcPaint();
 
 render();
 showRevisit();
