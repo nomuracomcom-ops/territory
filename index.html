@@ -36,7 +36,6 @@ border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0
 .hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(31,111,235,.95);
 color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none;}
 .house-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:18px;height:18px;}
-.numlbl{background:#fff;border:2px solid #d9333f;color:#d9333f;font-weight:700;font-size:14px;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;}
 .lp{min-width:190px;font-size:14px;}
 .lp h4{margin:0 0 6px;font-size:14px;}
 .lp .sts{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
@@ -93,7 +92,6 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" title="家を追加">➕</button>
 <button id="btnList" title="一覧">📋</button>
-<button id="btnAll" title="全体図">🗺️</button>
 <button id="btnDone" title="今日はここまで">🔚</button>
 </div>
 <div class="legend">
@@ -138,19 +136,11 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="territories.js"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
-const ISALL = (TPARAM==='all');
 const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
 const TERR_ID = "terr-"+TPARAM;
-if(ISALL){
-document.title = "区域全体図";
-document.querySelector('header .no').textContent = "全体図";
-document.querySelector('header .name').textContent = (window.CONGREGATION&&window.CONGREGATION.name)||"会衆 区域全体";
-}else{
 document.title = "区域"+TPARAM+" "+TDATA.name;
 document.querySelector('header .no').textContent = "区域 "+TPARAM;
 document.querySelector('header .name').textContent = TDATA.name;
-}
-var btnAll=document.getElementById('btnAll'); if(btnAll) btnAll.onclick=function(){location.href='?t=all';};
 const STATUSES = {
 met:{label:"会えた", color:"#f5b400"},
 revisit:{label:"再訪問", color:"#1f6feb"},
@@ -168,34 +158,6 @@ L.control.zoom({position:'topright'}).addTo(map);
 L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{
 maxZoom:21, maxNativeZoom:18, attribution:"地理院地図（国土地理院）"
 }).addTo(map);
-
-if(ISALL){ buildOverview(); } else { buildTerritory(); }
-
-function buildOverview(){
-var tb=document.querySelector('.toolbar'); if(tb) tb.style.display='none';
-var lg=document.querySelector('.legend'); if(lg) lg.style.display='none';
-var nt=document.getElementById('notice'); if(nt) nt.style.display='none';
-var congPoly=null;
-if(window.CONGREGATION && window.CONGREGATION.boundary && window.CONGREGATION.boundary.length){
-L.polygon(window.CONGREGATION.boundary,{color:"#ffffff",weight:9,opacity:0.95,fill:false}).addTo(map);
-congPoly=L.polygon(window.CONGREGATION.boundary,{color:"#6a1b9a",weight:4.5,opacity:1,fillColor:"#6a1b9a",fillOpacity:0.05}).addTo(map);
-}
-var all=window.TERRITORIES||{}, polys=[];
-Object.keys(all).forEach(function(k){
-var t=all[k]; if(!t.boundary||!t.boundary.length) return;
-var pg=L.polygon(t.boundary,{color:"#d9333f",weight:2,fillColor:"#d9333f",fillOpacity:.10}).addTo(map);
-pg.on('click',function(){location.href='?t='+k;});
-var lbl=L.marker(pg.getBounds().getCenter(),{icon:L.divIcon({className:'',html:'<div class="numlbl">'+k+'</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map);
-lbl.on('click',function(){location.href='?t='+k;});
-polys.push(pg);
-});
-var fit=congPoly?congPoly.getBounds():null;
-polys.forEach(function(p){ if(fit){fit.extend(p.getBounds());} else {fit=p.getBounds();} });
-if(fit){ map.fitBounds(fit,{padding:[30,30]}); } else { map.setView([34.6437,136.1150],14); }
-setTimeout(function(){ map.invalidateSize(); }, 300);
-}
-
-function buildTerritory(){
 const poly = L.polygon(BOUNDARY,{color:"#d9333f",weight:3,fillColor:"#d9333f",fillOpacity:.10}).addTo(map);
 map.fitBounds(poly.getBounds(),{padding:[40,40]});
 
@@ -349,18 +311,13 @@ refreshMap();
 
 // ---- 今日はここまで（お疲れさま＋誉め言葉の聖句ローテーション）----
 const PRAISE=[
-{q:"「立派にやりました，善い忠実な奴隷よ」", ref:"マタイ 25:21"},
-{q:"神はあなたの行いと愛を忘れません。", ref:"ヘブライ 6:10"},
-{q:"「あなたたちの労苦は無駄ではありません」", ref:"コリント第一 15:58"},
-{q:"諦めなければ，しかるべき時に刈り取ります。", ref:"ガラテア 6:9"},
-{q:"「この人は自分にできることをしました」", ref:"マルコ 14:8"},
-{q:"あなたによって，仲間は元気づけられました。", ref:"フィレモン 1:7"},
-{q:"「立派に戦い，走路を最後まで走りました」", ref:"テモテ第二 4:7"},
-{q:"「神は喜んで与える人を愛します」", ref:"コリント第二 9:7"},
-{q:"涙と共に種をまく人は，喜びの声で刈り取ります。", ref:"詩編 126:5"},
-{q:"「いつも主にあって喜びなさい」", ref:"フィリピ 4:4"},
-{q:"管理人に求められるのは，忠実であることです。", ref:"コリント第一 4:2"},
-{q:"ひそかに見ているあなたの父が報いてくれます。", ref:"マタイ 6:4"}
+{q:"「よく頑張りました！ あなたは忠実な良い奴隷です」", ref:"マタイ 25:21"},
+{q:"神は…そうした働きや愛を忘れたりはされません。", ref:"ヘブライ 6:10"},
+{q:"「主のために働くことは無駄ではないのです」", ref:"コリント第一 15:58"},
+{q:"諦めないなら，やがて刈り取ることになります。", ref:"ガラテア 6:9"},
+{q:"「天の王国はからしの種のようです。人がそれを畑に植えました」", ref:"マタイ 13:31"},
+{q:"聖なる力が働く時…地上の最も遠い所にまで，私の証人となります。", ref:"使徒 1:8"},
+{q:"まく人と刈り取る人は共に喜びます。", ref:"ヨハネ 4:36"}
 ];
 function showDone(){
 const todayStr=today();
@@ -383,7 +340,6 @@ function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
 render();
 showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
-}
 </script>
 </body>
 </html>
