@@ -161,9 +161,12 @@ function buildOverview(){
   }).addTo(map);
 
   let bounds = null;
-  // 会衆全体の外枠（点線）
+  // 会衆全体の外枠（白フチ＋紫線で見やすく、内側はごく薄く着色）
   if(window.CONGREGATION && window.CONGREGATION.boundary && window.CONGREGATION.boundary.length){
-    const cong = L.polygon(window.CONGREGATION.boundary,{color:"#555",weight:2,dashArray:"6 5",fill:false}).addTo(map);
+    // 下に白い縁取り（どんな地図色の上でも線が浮き立つ）
+    L.polygon(window.CONGREGATION.boundary,{color:"#ffffff",weight:7,opacity:.85,fill:false}).addTo(map);
+    // 上に本線（紫）＋ごく薄い面
+    const cong = L.polygon(window.CONGREGATION.boundary,{color:"#7048e8",weight:3,opacity:1,fillColor:"#7048e8",fillOpacity:.05}).addTo(map);
     bounds = cong.getBounds();
   }
   // 各区域の境界＋丸数字ラベル
@@ -171,7 +174,7 @@ function buildOverview(){
   Object.keys(T).forEach(function(num){
     const t = T[num];
     if(!t.boundary || !t.boundary.length) return;
-    const p = L.polygon(t.boundary,{color:"#1f6feb",weight:2,fillColor:"#1f6feb",fillOpacity:.18}).addTo(map);
+    const p = L.polygon(t.boundary,{color:"#1f6feb",weight:2.5,fillColor:"#1f6feb",fillOpacity:.28}).addTo(map);
     p.on('click',function(){ location.search = '?t='+num; });
     // 重心（単純平均）にラベル
     let la=0, lo=0;
@@ -376,7 +379,7 @@ const PRAISE=[
 function showDone(){
 const todayStr=today();
 const n=houses.filter(function(h){return h.date===todayStr;}).length;
-document.getElementById('doneSummary').textContent = n>0 ? ('今日は '+n+' 軒を記録しました。') : '今日も活動おつかれさまでした。';
+document.getElementById('doneSummary').textContent = n>0 ? ('今日は '+n+' 軒を記録しました。') : '';
 let idx=parseInt(localStorage.getItem('praiseIdx')||'0',10);
 if(isNaN(idx)||idx<0) idx=0;
 idx=idx % PRAISE.length;
