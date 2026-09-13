@@ -92,6 +92,19 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .ov-badge.free{background:#e6f4ea;color:#1e7a34;}
 .ov-badge.used{background:#eceff1;color:#637381;}
 .ov-badge.na{background:#f3f0ff;color:#6b5bd1;}
+.apt-pin{border-radius:6px;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);width:26px;height:26px;background:#0e8c8c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.aptname{width:100%;border:1px solid #ccc;border-radius:8px;padding:8px;font-size:14px;margin-bottom:8px;font-family:inherit;}
+.addroom{display:flex;gap:8px;margin:10px 0;}
+.addroom input{flex:1;border:1px solid #ccc;border-radius:8px;padding:9px;font-size:15px;font-family:inherit;}
+.addroom button{border:none;background:#0e8c8c;color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;}
+.room{display:flex;align-items:center;gap:6px;padding:9px 0;border-bottom:1px solid #eee;}
+.room .rno{font-weight:700;min-width:50px;font-size:15px;}
+.room .rbtns{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.room .rbtns button{border:1px solid #ccc;border-radius:6px;padding:5px 6px;font-size:11px;background:#fff;cursor:pointer;}
+.room .rbtns button.on{color:#fff;border-color:transparent;font-weight:700;}
+.room .rdel{color:#d9333f;background:none;border:none;font-size:16px;cursor:pointer;}
+.aptsum{font-size:12px;color:#0e8c8c;background:#e9f6f6;border-radius:8px;padding:7px 10px;margin-bottom:8px;}
+.toolbar button#btnAddApt.active{background:#0e8c8c;color:#fff;}
 </style>
 </head>
 <body>
@@ -111,6 +124,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="toolbar">
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" title="家を追加">➕</button>
+<button id="btnAddApt" title="アパート/マンションを追加">🏢</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
@@ -118,7 +132,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <span class="dot" style="background:#f5b400"></span>会えた<br>
 <span class="dot" style="background:#1f6feb"></span>再訪問<br>
 <span class="dot" style="background:#2ea043"></span>投函<br>
-<span class="dot" style="background:#d9333f"></span>訪問しない
+<span class="dot" style="background:#d9333f"></span>訪問しない<br>
+<span class="dot" style="background:#9E9E9E"></span>留守
 </div>
 
 <div class="sheet" id="sheet">
@@ -141,6 +156,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
 <button data-s="posted" style="background:#2ea043">投函を全部消す</button>
 <button data-s="dnc" style="background:#d9333f">訪問しないを全部消す</button>
+<button data-s="away" style="background:#9E9E9E">留守を全部消す</button>
 </div>
 </div>
 </div>
@@ -157,6 +173,27 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 </div>
 
+<div class="sheet" id="aptSheet">
+<div class="card">
+<h3><span id="aptTitle">アパート/マンション</span> <span class="x" id="aptX">✕</span></h3>
+<div class="aptsum" id="aptSummary"></div>
+<input id="aptName" class="aptname" placeholder="建物名（任意）例：○○マンション">
+<a class="gmap" id="aptGmap" href="#" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>
+<div class="addroom">
+<input id="roomAddInput" type="text" inputmode="text" placeholder="部屋番号を入力（例：101）">
+<button id="roomAddBtn">追加</button>
+</div>
+<div id="roomBody"></div>
+<div class="tools">
+<button id="aptExport">アパマン記録を書き出し</button>
+<button id="aptImport">読み込み</button>
+</div>
+<input type="file" id="aptFileIn" accept="application/json" style="display:none">
+<div class="tools" style="margin-top:8px">
+<button id="aptDel" style="color:#d9333f">このアパート/マンションを削除</button>
+</div>
+</div>
+</div>
 <div class="done" id="done">
 <div class="done-card">
 <div class="done-emoji">👏</div>
@@ -261,9 +298,10 @@ const STATUSES = {
 met:{label:"会えた", color:"#f5b400"},
 revisit:{label:"再訪問", color:"#1f6feb"},
 posted:{label:"投函", color:"#2ea043"},
-dnc:{label:"訪問しない", color:"#d9333f"}
+dnc:{label:"訪問しない", color:"#d9333f"},
+away:{label:"留守", color:"#9E9E9E"}
 };
-const ORDER = ["met","revisit","posted","dnc"];
+const ORDER = ["met","revisit","posted","dnc","away"];
 
 // 区域境界（territories.js から取得）
 const BOUNDARY = TDATA.boundary;
@@ -531,6 +569,50 @@ render();
 showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
 } // end buildTerritory
+;(function(){
+ if (typeof ISALL!=='undefined' && ISALL) return;
+ var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
+ var APT_ID = TERR_ID + '-apt';
+ var apts = (function(){ try{return JSON.parse(localStorage.getItem(APT_ID))||[]}catch(e){return []} })();
+ function aptSave(){ localStorage.setItem(APT_ID, JSON.stringify(apts)); }
+ function aToday(){ var d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
+ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+ var aptLayer = L.layerGroup().addTo(map);
+ function aptIcon(){ return L.divIcon({className:"",html:'<div class="apt-pin">🏢</div>',iconSize:[26,26],iconAnchor:[13,13]}); }
+ function aptRender(){ aptLayer.clearLayers(); apts.forEach(function(a){ var m=L.marker([a.lat,a.lng],{icon:aptIcon()}).addTo(aptLayer); m.on('click',function(){ openApt(a); }); }); }
+ var curApt=null, aptMode=false;
+ function openApt(a){ curApt=a; renderApt(); sheetEl.style.display='flex'; }
+ document.getElementById('aptX').onclick=function(){ sheetEl.style.display='none'; };
+ sheetEl.onclick=function(e){ if(e.target===sheetEl) sheetEl.style.display='none'; };
+ function renderApt(){
+   var a=curApt; if(!a) return; if(!a.rooms) a.rooms=[];
+   document.getElementById('aptName').value=a.name||'';
+   document.getElementById('aptGmap').href='https://www.google.com/maps/dir/?api=1&destination='+a.lat+','+a.lng+'&travelmode=walking';
+   var done=a.rooms.filter(function(r){return r.status;}).length;
+   document.getElementById('aptSummary').textContent='全 '+a.rooms.length+' 室'+(a.rooms.length?'（記録済 '+done+' ／ 残り '+(a.rooms.length-done)+'）':'　※下の欄に部屋番号を入力して追加');
+   var body=document.getElementById('roomBody');
+   if(!a.rooms.length){ body.innerHTML='<div style=\'color:#999;text-align:center;padding:20px 0;font-size:13px\'>部屋がまだありません。<br>下の欄に「101」などを入力して「追加」してください。</div>'; return; }
+   body.innerHTML=a.rooms.map(function(r,i){ return '<div class="room" data-i="'+i+'"><span class="rno">'+esc(r.no)+'</span><span class="rbtns">'+ORDER.map(function(st){return '<button data-s="'+st+'" class="'+(r.status===st?'on':'')+'" style="'+(r.status===st?'background:'+STATUSES[st].color:'')+'">'+STATUSES[st].label+'</button>';}).join('')+'</span><button class="rdel">✕</button></div>'; }).join('');
+   body.querySelectorAll('.room').forEach(function(row){ var i=parseInt(row.dataset.i,10);
+     row.querySelectorAll('.rbtns button').forEach(function(b){ b.onclick=function(){ curApt.rooms[i].status=b.dataset.s; curApt.rooms[i].date=aToday(); aptSave(); renderApt(); }; });
+     row.querySelector('.rdel').onclick=function(){ if(!confirm(curApt.rooms[i].no+' を削除しますか？'))return; curApt.rooms.splice(i,1); aptSave(); renderApt(); };
+   });
+ }
+ function addRoom(){ if(!curApt)return; if(!curApt.rooms)curApt.rooms=[]; var inp=document.getElementById('roomAddInput'); var v=(inp.value||'').trim(); if(!v)return; v.split(/[,、\s]+/).forEach(function(no){ if(no) curApt.rooms.push({no:no,status:"",date:""}); }); inp.value=''; aptSave(); renderApt(); }
+ document.getElementById('roomAddBtn').onclick=addRoom;
+ document.getElementById('roomAddInput').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addRoom(); } });
+ document.getElementById('aptName').oninput=function(e){ if(curApt){ curApt.name=e.target.value; aptSave(); } };
+ document.getElementById('aptDel').onclick=function(){ if(!curApt)return; if(!confirm('このアパート/マンション（'+(curApt.name||'名称未設定')+'）を削除しますか？部屋の記録もすべて消えます。'))return; apts=apts.filter(function(x){return x.id!==curApt.id;}); aptSave(); aptRender(); sheetEl.style.display='none'; };
+ document.getElementById('aptExport').onclick=function(){ var blob=new Blob([JSON.stringify(apts,null,2)],{type:'application/json'}); var u=document.createElement('a'); u.href=URL.createObjectURL(blob); u.download='区域'+TPARAM+'_アパマン_'+new Date().toISOString().slice(0,10)+'.json'; u.click(); };
+ document.getElementById('aptImport').onclick=function(){ document.getElementById('aptFileIn').click(); };
+ document.getElementById('aptFileIn').onchange=function(e){ var f=e.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=function(){ try{ var d=JSON.parse(r.result); if(Array.isArray(d)){ apts=d; aptSave(); aptRender(); alert('読み込みました'); } }catch(err){ alert('読み込めませんでした'); } }; r.readAsText(f); };
+ var btnAA=document.getElementById('btnAddApt');
+ btnAA.onclick=function(){ aptMode=!aptMode; this.classList.toggle('active',aptMode); var ba=document.getElementById('btnAdd'); if(aptMode && ba && ba.classList.contains('active')) ba.click(); var hint=document.getElementById('hint'); if(hint){ hint.textContent=aptMode?'地図をタップしてアパート/マンションを追加':'地図をタップして家を記録'; hint.style.display=aptMode?'block':'none'; } };
+ var ba2=document.getElementById('btnAdd'); if(ba2){ ba2.addEventListener('click',function(){ if(aptMode){ aptMode=false; btnAA.classList.remove('active'); } }); }
+ map.on('click',function(e){ if(!aptMode) return; var a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]}; apts.push(a); aptSave(); aptRender(); openApt(a); });
+ aptRender();
+})();
+
 </script>
 </body>
 </html>
