@@ -10,7 +10,7 @@ function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部�
  context.fetch=async url=>({ok:true,text:async()=>url.includes('2125994133')?sharedCSV:url.includes('852025746')?'区域番号,状態\n4,使用中':'t,lat,lng,kind,memo\n4,34.647,136.118,dnc,"注意,メモ"'});
  context.window=context;vm.createContext(context);
  const add=document.addEventListener.bind(document);document.addEventListener=(n,f)=>{if(n==='DOMContentLoaded')domReady=f;else add(n,f)};
- for(const script of document.querySelectorAll('script')){const src=script.getAttribute('src');if(src && src.startsWith('https:'))continue;vm.runInContext(src?fs.readFileSync(path.join(root,src),'utf8'):script.textContent,context);}
+ for(const script of document.querySelectorAll('script')){const src=script.getAttribute('src');if(src && src.startsWith('https:'))continue;vm.runInContext(src?fs.readFileSync(path.join(root,src.split('?')[0]),'utf8'):script.textContent,context);}
  domReady();
  return {context,document,maps,data,alerts,click:id=>document.getElementById(id).click(),flush:async()=>{await new Promise(r=>setImmediate(r))},input:(id,value)=>{const e=document.getElementById(id);e.value=value;e.dispatchEvent(new Event('input'));}};
 }
