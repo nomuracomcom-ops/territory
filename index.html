@@ -574,9 +574,10 @@ render();
 showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
 } // end buildTerritory
-;(function(){
+;(function __aptInit(){
  if (typeof ISALL!=='undefined' && ISALL) return;
- var map=window.__LMAP; var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
+ var map=window.__LMAP; if(!map||typeof map.getCenter!=='function'){return setTimeout(__aptInit,200);}
+ var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
  var APT_ID = TERR_ID + '-apt';
  var apts = (function(){ try{return JSON.parse(localStorage.getItem(APT_ID))||[]}catch(e){return []} })();
  function aptSave(){ localStorage.setItem(APT_ID, JSON.stringify(apts)); }
@@ -618,9 +619,10 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  aptRender();
 })();
 
-;(function(){
+;(function __dncInit(){
  if (typeof ISALL!=='undefined' && ISALL) return;
- var map=window.__LMAP; var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
+ var map=window.__LMAP; if(!map||typeof map.getCenter!=='function'){return setTimeout(__dncInit,200);}
+ var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
  var KMAP={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  var dncLayer=L.layerGroup().addTo(map);
