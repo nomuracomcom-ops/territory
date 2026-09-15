@@ -578,7 +578,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  if (typeof ISALL!=='undefined' && ISALL) return;
  var map=window.__LMAP; if(!map||typeof map.getCenter!=='function'){return setTimeout(__aptInit,200);}
  var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
- var APT_ID = TERR_ID + '-apt';
+ var APT_ID = 'terr-'+TPARAM+'-apt';
  var apts = (function(){ try{return JSON.parse(localStorage.getItem(APT_ID))||[]}catch(e){return []} })();
  function aptSave(){ localStorage.setItem(APT_ID, JSON.stringify(apts)); }
  function aToday(){ var d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
