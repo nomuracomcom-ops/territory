@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1f6feb">
 <title>区域1 桔梗が丘1番町A</title>
@@ -108,6 +108,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .dnc-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #b23b3b;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
+<link rel="stylesheet" href="improvements.css">
 </head>
 <body>
 <div id="app">
@@ -117,39 +118,43 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <span class="count" id="count">0件</span>
 </header>
 <div id="notice">
+<details class="sync-panel"><summary id="syncSummary">共有情報を確認中…</summary><div id="syncDetails" aria-live="polite"></div><button id="syncRetry">再取得</button></details>
 <div class="revisit-bar" id="revisit"></div>
 </div>
 <div id="map"></div>
 </div>
 
 <div class="hint" id="hint">地図をタップして家を記録</div>
-<div class="toolbar">
+<div class="toolbar" aria-label="地図の操作">
+<button id="btnRecord" aria-expanded="false">✏️<small>記録</small></button>
 <button id="btnLoc" title="現在地">📍</button>
-<button id="btnAdd" title="家を追加">➕</button>
-<button id="btnAddApt" title="アパート/マンションを追加">🏢</button>
-<button id="btnDnc" title="訪問お断りを追加">🚫</button>
+<button id="btnAdd" class="record-action" title="家を追加">➕<small>家</small></button>
+<button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢<small>建物</small></button>
+<button id="btnDnc" class="record-action" title="訪問お断りを追加">🚫<small>注意</small></button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
-<div class="legend">
+<details class="legend"><summary>記号の説明</summary>
 <span class="dot" style="background:#f5b400"></span>会えた<br>
 <span class="dot" style="background:#1f6feb"></span>再訪問<br>
 <span class="dot" style="background:#2ea043"></span>投函<br>
 <span class="dot" style="background:#d9333f"></span>訪問しない<br>
 <span class="dot" style="background:#9E9E9E"></span>留守<br>
 🚫 訪問お断り（共有）
-</div>
+</details>
 
 <div class="sheet" id="sheet">
 <div class="card">
 <h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
+<p class="privacy-note">家・部屋の訪問記録と奉仕時間は、この端末だけに保存されます。氏名は入力しないでください。</p>
+<div class="backup-tools"><button id="backupAll">全記録をバックアップ</button><button id="restoreAll">全記録を復元</button><input id="backupFile" type="file" accept="application/json" hidden><p id="backupStatus">定期的にバックアップしてください。</p></div>
 <div class="sec-title">🚶 奉仕記録</div>
 <div class="svc-sum" id="svcSum"></div>
 <div id="svcBody"></div>
 <div class="sec-title div">🏠 家の記録</div>
 <div id="listBody"></div>
 <div class="tools">
-<button id="btnExport">バックアップ書き出し</button>
+<button id="btnExport">この区域の家を書き出し</button>
 <button id="btnImport">読み込み</button>
 </div>
 <input type="file" id="fileIn" accept="application/json" style="display:none">
@@ -181,7 +186,9 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="card">
 <h3><span id="aptTitle">アパート/マンション</span> <span class="x" id="aptX">✕</span></h3>
 <div class="aptsum" id="aptSummary"></div>
-<input id="aptName" class="aptname" placeholder="建物名（任意）例：○○マンション">
+<p class="privacy-note" id="aptPrivacy"></p>
+<button id="aptShare">建物・部屋番号を共有用にコピー</button>
+<input aria-label="建物名" id="aptName" class="aptname" placeholder="建物名（任意）例：○○マンション">
 <a class="gmap" id="aptGmap" href="#" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>
 <div class="addroom">
 <input id="roomAddInput" type="text" inputmode="text" placeholder="部屋番号を入力（例：101）">
@@ -189,7 +196,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 <div id="roomBody"></div>
 <div class="tools">
-<button id="aptExport">アパマン記録を書き出し</button>
+<button id="aptExport">端末内の建物を書き出し</button>
 <button id="aptImport">読み込み</button>
 </div>
 <input type="file" id="aptFileIn" accept="application/json" style="display:none">
@@ -211,10 +218,21 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
+<script src="app-core.js"></script>
 <script src="status.js"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
 const ISALL = (TPARAM === 'all');
+
+const STATUSES = {
+met:{label:"会えた", color:"#f5b400"},
+revisit:{label:"再訪問", color:"#1f6feb"},
+posted:{label:"投函", color:"#2ea043"},
+dnc:{label:"訪問しない", color:"#d9333f"},
+away:{label:"留守", color:"#9E9E9E"}
+};
+const ORDER = ["met","revisit","posted","dnc","away"];
+
 
 // ====== 全体図（?t=all）／各区域画面の振り分け ======
 if(ISALL){ buildOverview(); } else { buildTerritory(); }
@@ -228,7 +246,7 @@ function buildOverview(){
   // 区域作業用のUIは隠す
   document.querySelector('.toolbar').style.display = 'none';
   document.querySelector('.legend').style.display = 'none';
-  document.getElementById('notice').style.display = 'none';
+  document.getElementById('revisit').style.display = 'none';
   var _pill = document.getElementById('btnSvc'); if(_pill) _pill.style.display='none';
 
   const map = L.map('map',{zoomControl:false,maxZoom:21}).setView([34.62,136.16],12);
@@ -271,18 +289,19 @@ function buildOverview(){
   ovBtn.onclick=function(){ renderOv(); ovSheet.style.display='flex'; };
   document.getElementById('ovX').onclick=function(){ ovSheet.style.display='none'; };
   ovSheet.onclick=function(e){ if(e.target===ovSheet) ovSheet.style.display='none'; };
+  window.refreshOverviewStatus = function(){ if(ovSheet.style.display==='flex') renderOv(); };
   function renderOv(){
     const TT=window.TERRITORIES||{}, SS=window.TERR_STATUS||{};
     const nums=Object.keys(TT).sort(function(a,b){return parseInt(a,10)-parseInt(b,10);});
     let free=0;
     const rows=nums.map(function(n){
-      const st=SS[n]||''; let cls='na', lab='未設定';
+      const st=SS[n]||''; let cls='na', lab='状況未確認';
       if(st==='空き'){ cls='free'; lab='空き'; free++; }
       else if(st==='貸出中'){ cls='used'; lab='貸出中'; }
       else if(st){ cls='used'; lab=st; }
       return '<div class="ov-item" data-n="'+n+'"><div class="num">'+n+'</div>'+
-        '<div class="nm">'+(TT[n].name||('区域'+n))+'</div>'+
-        '<span class="ov-badge '+cls+'">'+lab+'</span></div>';
+        '<div class="nm">'+App.escape(TT[n].name||('区域'+n))+'</div>'+
+        '<span class="ov-badge '+cls+'">'+App.escape(lab)+'</span></div>';
     }).join('');
     document.getElementById('ovSum').innerHTML='全 '+nums.length+' 区域 ・ 空き <b>'+free+'</b>';
     document.getElementById('ovBody').innerHTML=rows||'<div class="empty">区域がありません。</div>';
@@ -294,19 +313,12 @@ function buildOverview(){
 
 // ====== 各区域ビュー ======
 function buildTerritory(){
+if(!window.TERRITORIES || !window.TERRITORIES[TPARAM]){ document.getElementById('map').textContent='この区域は登録されていません。区域一覧に戻ってください。'; document.querySelector('.toolbar').style.display='none'; document.getElementById('btnSvc').style.display='none'; const back=document.createElement('a'); back.href='?t=all'; back.textContent='区域一覧へ'; document.getElementById('map').appendChild(back); return; }
 const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
 const TERR_ID = "terr-"+TPARAM;
 document.title = "区域"+TPARAM+" "+TDATA.name;
 document.querySelector('header .no').textContent = "区域 "+TPARAM;
 document.querySelector('header .name').textContent = TDATA.name;
-const STATUSES = {
-met:{label:"会えた", color:"#f5b400"},
-revisit:{label:"再訪問", color:"#1f6feb"},
-posted:{label:"投函", color:"#2ea043"},
-dnc:{label:"訪問しない", color:"#d9333f"},
-away:{label:"留守", color:"#9E9E9E"}
-};
-const ORDER = ["met","revisit","posted","dnc","away"];
 
 // 区域境界（territories.js から取得）
 const BOUNDARY = TDATA.boundary;
@@ -326,7 +338,7 @@ let addMode = false;
 let meMarker = null;
 
 function load(){ try{return JSON.parse(localStorage.getItem(TERR_ID))||[]}catch(e){return []} }
-function save(){ localStorage.setItem(TERR_ID, JSON.stringify(houses)); updateCount(); showRevisit(); }
+function save(){ App.store(TERR_ID, JSON.stringify(houses)); updateCount(); showRevisit(); }
 function updateCount(){ document.getElementById('count').textContent = houses.length+"件"; }
 
 // ---- マーカー描画 ----
@@ -347,9 +359,9 @@ function popupHtml(h){
 const d = document.createElement('div'); d.className="lp";
 d.innerHTML = '<h4>家の記録</h4>'+
 '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
-'<textarea placeholder="メモ">'+(h.memo||'')+'</textarea>'+
+'<textarea placeholder="メモ（氏名は入力しない）">'+App.escape(h.memo||'')+'</textarea>'+
 '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
-'<div class="row"><span class="date">'+(h.date||'')+'</span><button class="del">削除</button></div>';
+'<div class="row"><span class="date">'+App.escape(h.date||'')+'</span><button class="del">削除</button></div>';
 return d;
 }
 function bindPopup(popup, h, marker){
@@ -374,7 +386,7 @@ addMode=!addMode; this.classList.toggle('active',addMode);
 document.getElementById('hint').style.display=addMode?'block':'none';
 };
 map.on('click',function(e){
-if(!addMode) return;
+if(App.mode!=='btnAdd') return;
 const h={id:Date.now(), lat:e.latlng.lat, lng:e.latlng.lng, status:"met", memo:"", date:today()};
 houses.push(h); save(); render();
 const m=layer.getLayers().slice(-1)[0]; if(m) m.openPopup();
@@ -420,7 +432,7 @@ items.forEach(function(h){
 const s=STATUSES[h.status]||{label:'不明',color:'#999'};
 html+='<div class="litem" data-lat="'+h.lat+'" data-lng="'+h.lng+'">'+
 '<span class="dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+s.color+'"></span>'+
-'<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+(h.date||'')+'</div></span>'+
+'<span>'+(h.memo?escapeHtml(h.memo):'(メモなし)')+'<div class="memo">'+App.escape(h.date||'')+'</div></span>'+
 '<span class="badge" style="background:'+s.color+'">'+s.label+'</span></div>';
 });
 b.innerHTML=html;
@@ -433,13 +445,13 @@ layer.getLayers().forEach(function(m){const ll=m.getLatLng();if(Math.abs(ll.lat-
 };
 });
 }
-function escapeHtml(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 // ---- 種類ごとに一括削除 ----
 function clearByStatus(st){
 var n=houses.filter(function(h){return h.status===st;}).length;
 if(n===0){alert(STATUSES[st].label+'のピンはありません');return;}
-if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（元に戻せません）')) return;
+if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（直後に「元に戻す」で取り消せます）')) return;
 houses=houses.filter(function(h){return h.status!==st;}); save(); render(); renderList();
 }
 document.querySelectorAll('.bulk-btns button').forEach(function(b){
@@ -455,7 +467,7 @@ a.download='区域'+TPARAM+'_記録_'+new Date().toISOString().slice(0,10)+'.jso
 document.getElementById('btnImport').onclick=function(){document.getElementById('fileIn').click();};
 document.getElementById('fileIn').onchange=function(e){
 const f=e.target.files[0];if(!f)return;const r=new FileReader();
-r.onload=function(){try{const d=JSON.parse(r.result);if(Array.isArray(d)){houses=d;save();render();renderList();alert('読み込みました');}}catch(err){alert('読み込めませんでした');}};
+r.onload=function(){try{const d=JSON.parse(r.result);App.validateHouses(d); if(!confirm('この区域の家の記録を置き換えますか？'))return; houses=d;save();render();renderList();alert('読み込みました');}catch(err){alert('読み込めませんでした');}};
 r.readAsText(f);
 };
 
@@ -491,7 +503,7 @@ let idx=parseInt(localStorage.getItem('praiseIdx')||'0',10);
 if(isNaN(idx)||idx<0) idx=0;
 idx=idx % PRAISE.length;
 const v=PRAISE[idx];
-localStorage.setItem('praiseIdx', String((idx+1)%PRAISE.length));
+App.store('praiseIdx', String((idx+1)%PRAISE.length));
 document.getElementById('doneVerse').innerHTML='<span class="q">'+v.q+'</span><span class="ref">— '+v.ref+'</span>';
 document.getElementById('done').style.display='flex';
 }
@@ -503,9 +515,9 @@ function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
 // ---- 伝道スタート/終了（奉仕記録：日付・時間帯・所要時間。端末内・個人通算、区域番号タグ付き）----
 const SVC_LOG='svc-log', SVC_ACTIVE='svc-active';
 function svcLoad(){ try{return JSON.parse(localStorage.getItem(SVC_LOG))||[]}catch(e){return []} }
-function svcSave(a){ localStorage.setItem(SVC_LOG, JSON.stringify(a)); }
+function svcSave(a){ App.store(SVC_LOG, JSON.stringify(a)); }
 function svcActive(){ try{return JSON.parse(localStorage.getItem(SVC_ACTIVE))||null}catch(e){return null} }
-function svcSetActive(o){ if(o){localStorage.setItem(SVC_ACTIVE,JSON.stringify(o));} else {localStorage.removeItem(SVC_ACTIVE);} }
+function svcSetActive(o){ if(o){App.store(SVC_ACTIVE,JSON.stringify(o));} else {App.remove(SVC_ACTIVE);} }
 function pad2(n){ return (n<10?'0':'')+n; }
 function ymd(ms){ const d=new Date(ms); return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
 const SVC_WD=['日','月','火','水','木','金','土'];
@@ -574,88 +586,95 @@ render();
 showRevisit();
 setTimeout(function(){ map.invalidateSize(); }, 300);
 } // end buildTerritory
-;(function __aptInit(){
- if (typeof ISALL!=='undefined' && ISALL) return;
- var map=window.__LMAP; if(!map||typeof map.getCenter!=='function'){return setTimeout(__aptInit,200);}
- var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
- var APT_ID = 'terr-'+TPARAM+'-apt';
- var apts = (function(){ try{return JSON.parse(localStorage.getItem(APT_ID))||[]}catch(e){return []} })();
- function aptSave(){ localStorage.setItem(APT_ID, JSON.stringify(apts)); }
- function aToday(){ var d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
- function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
- var aptLayer = L.layerGroup().addTo(map);
- function aptIcon(){ return L.divIcon({className:"",html:'<div class="apt-pin">🏢</div>',iconSize:[26,26],iconAnchor:[13,13]}); }
- function aptRender(){ aptLayer.clearLayers(); apts.forEach(function(a){ var m=L.marker([a.lat,a.lng],{icon:aptIcon()}).addTo(aptLayer); m.on('click',function(){ openApt(a); }); }); }
- var curApt=null, aptMode=false;
- function openApt(a){ curApt=a; renderApt(); sheetEl.style.display='flex'; }
- document.getElementById('aptX').onclick=function(){ sheetEl.style.display='none'; };
- sheetEl.onclick=function(e){ if(e.target===sheetEl) sheetEl.style.display='none'; };
- function renderApt(){
-   var a=curApt; if(!a) return; if(!a.rooms) a.rooms=[];
-   document.getElementById('aptName').value=a.name||'';
+;(function apartments(){
+ if(ISALL || !window.TERRITORIES[TPARAM])return;
+ const map=window.__LMAP, key='terr-'+TPARAM+'-apt', recordsKey='terr-'+TPARAM+'-shared-records';
+ const sheet=document.getElementById('aptSheet'), name=document.getElementById('aptName');
+ let local=[], shared=[], records=Object.create(null), current=null;
+ try{local=JSON.parse(localStorage.getItem(key))||[];App.validateApartments(local);}catch(e){alert('建物の保存記録を読み込めませんでした。元の記録は保持しています。全記録のバックアップを確認してください。');return;}
+ try{records=JSON.parse(localStorage.getItem(recordsKey))||Object.create(null);if(!records || Array.isArray(records) || typeof records!=='object')throw Error();Object.values(records).forEach(App.validateRooms);}catch(e){alert('共有建物の訪問記録を読み込めませんでした。元の記録を保持しています。');return;}
+ const layer=L.layerGroup().addTo(map);
+ const save=()=>App.store(key,JSON.stringify(local));
+ const saveRecords=()=>App.store(recordsKey,JSON.stringify(records));
+ const icon=()=>L.divIcon({className:'',html:'<div class="apt-pin">🏢</div>',iconSize:[26,26],iconAnchor:[13,13]});
+ function all(){const published=new Set(shared.map(a=>a.id));return [...local.filter(a=>!published.has('local-'+a.id)),...shared];}
+ function renderPins(){layer.clearLayers();all().forEach(a=>{L.marker([a.lat,a.lng],{icon:icon()}).addTo(layer).on('click',()=>{current=a;render();sheet.style.display='flex';});});}
+ function privateRooms(a){return Object.prototype.hasOwnProperty.call(records,a.id)?records[a.id]:[];}
+ function rooms(a){
+   if(!a.shared)return a.rooms;
+   // When a locally-created building becomes shared, retain its existing room results.
+   const source=local.find(x=>'local-'+x.id===a.id);
+   return a.rooms.map(r=>{const saved=privateRooms(a).find(x=>x.no===r.no)||(source && source.rooms.find(x=>x.no===r.no));return {no:r.no,status:saved?saved.status:'',date:saved?saved.date:''};});
+ }
+ function render(){
+   const a=current;if(!a)return;
+   const list=rooms(a);name.value=a.name;name.readOnly=!!a.shared;
+   document.getElementById('aptPrivacy').textContent=a.shared?'建物・部屋番号：全員で共有 ／ 訪問記録：この端末のみ。建物情報の変更は担当者へ。':'建物・部屋番号・訪問記録：この端末のみ。共有用コピーには訪問記録を含めません。';
+   document.getElementById('aptSummary').textContent='全 '+list.length+' 室（記録済 '+list.filter(r=>r.status).length+'）';
+   document.getElementById('aptTitle').textContent=a.shared?'共有のアパート／マンション':'アパート／マンション';
    document.getElementById('aptGmap').href='https://www.google.com/maps/dir/?api=1&destination='+a.lat+','+a.lng+'&travelmode=walking';
-   var done=a.rooms.filter(function(r){return r.status;}).length;
-   document.getElementById('aptSummary').textContent='全 '+a.rooms.length+' 室'+(a.rooms.length?'（記録済 '+done+' ／ 残り '+(a.rooms.length-done)+'）':'　※下の欄に部屋番号を入力して追加');
-   var body=document.getElementById('roomBody');
-   if(!a.rooms.length){ body.innerHTML='<div style=\'color:#999;text-align:center;padding:20px 0;font-size:13px\'>部屋がまだありません。<br>下の欄に「101」などを入力して「追加」してください。</div>'; return; }
-   body.innerHTML=a.rooms.map(function(r,i){ return '<div class="room" data-i="'+i+'"><span class="rno">'+esc(r.no)+'</span><span class="rbtns">'+ORDER.map(function(st){return '<button data-s="'+st+'" class="'+(r.status===st?'on':'')+'" style="'+(r.status===st?'background:'+STATUSES[st].color:'')+'">'+STATUSES[st].label+'</button>';}).join('')+'</span><button class="rdel">✕</button></div>'; }).join('');
-   body.querySelectorAll('.room').forEach(function(row){ var i=parseInt(row.dataset.i,10);
-     row.querySelectorAll('.rbtns button').forEach(function(b){ b.onclick=function(){ curApt.rooms[i].status=b.dataset.s; curApt.rooms[i].date=aToday(); aptSave(); renderApt(); }; });
-     row.querySelector('.rdel').onclick=function(){ if(!confirm(curApt.rooms[i].no+' を削除しますか？'))return; curApt.rooms.splice(i,1); aptSave(); renderApt(); };
+   document.querySelector('.addroom').hidden=!!a.shared;document.getElementById('aptDel').hidden=!!a.shared;
+   const body=document.getElementById('roomBody');body.replaceChildren();
+   if(!list.length){body.textContent='部屋番号を入力してください。101,102 のようにまとめて追加できます。';return;}
+   list.forEach(r=>{
+     const row=document.createElement('div');row.className='room';
+     const number=document.createElement('span');number.className='rno';number.textContent=r.no;row.appendChild(number);
+     const buttons=document.createElement('span');buttons.className='rbtns';row.appendChild(buttons);
+     ORDER.forEach(st=>{const b=document.createElement('button');b.textContent=STATUSES[st].label;b.setAttribute('aria-label',r.no+' '+STATUSES[st].label);b.setAttribute('aria-pressed',String(r.status===st));if(r.status===st){b.className='on';b.style.background=STATUSES[st].color;}
+       b.onclick=()=>{const status=r.status===st?'':st,date=status?new Date().toLocaleDateString('ja-JP'):'';
+         if(a.shared){const existing=privateRooms(a).filter(x=>x.no!==r.no);records[a.id]=[...existing,{no:r.no,status,date}];saveRecords();}
+         else{const target=a.rooms.find(x=>x.no===r.no);target.status=status;target.date=date;save();}render();};buttons.appendChild(b);});
+     if(!a.shared){const del=document.createElement('button');del.className='rdel';del.textContent='✕';del.setAttribute('aria-label',r.no+' を削除');del.onclick=()=>{if(!confirm(r.no+' を削除しますか？'))return;a.rooms=a.rooms.filter(x=>x.no!==r.no);save();render();};row.appendChild(del);}
+     body.appendChild(row);
    });
  }
- function addRoom(){ if(!curApt)return; if(!curApt.rooms)curApt.rooms=[]; var inp=document.getElementById('roomAddInput'); var v=(inp.value||'').trim(); if(!v)return; v.split(/[,、\s]+/).forEach(function(no){ if(no) curApt.rooms.push({no:no,status:"",date:""}); }); inp.value=''; aptSave(); renderApt(); }
- document.getElementById('roomAddBtn').onclick=addRoom;
- document.getElementById('roomAddInput').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addRoom(); } });
- document.getElementById('aptName').oninput=function(e){ if(curApt){ curApt.name=e.target.value; aptSave(); } };
- document.getElementById('aptDel').onclick=function(){ if(!curApt)return; if(!confirm('このアパート/マンション（'+(curApt.name||'名称未設定')+'）を削除しますか？部屋の記録もすべて消えます。'))return; apts=apts.filter(function(x){return x.id!==curApt.id;}); aptSave(); aptRender(); sheetEl.style.display='none'; };
- document.getElementById('aptExport').onclick=function(){ var blob=new Blob([JSON.stringify(apts,null,2)],{type:'application/json'}); var u=document.createElement('a'); u.href=URL.createObjectURL(blob); u.download='区域'+TPARAM+'_アパマン_'+new Date().toISOString().slice(0,10)+'.json'; u.click(); };
- document.getElementById('aptImport').onclick=function(){ document.getElementById('aptFileIn').click(); };
- document.getElementById('aptFileIn').onchange=function(e){ var f=e.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=function(){ try{ var d=JSON.parse(r.result); if(Array.isArray(d)){ apts=d; aptSave(); aptRender(); alert('読み込みました'); } }catch(err){ alert('読み込めませんでした'); } }; r.readAsText(f); };
- var btnAA=document.getElementById('btnAddApt');
- btnAA.onclick=function(){ aptMode=!aptMode; this.classList.toggle('active',aptMode); var ba=document.getElementById('btnAdd'); if(aptMode && ba && ba.classList.contains('active')) ba.click(); var hint=document.getElementById('hint'); if(hint){ hint.textContent=aptMode?'地図をタップしてアパート/マンションを追加':'地図をタップして家を記録'; hint.style.display=aptMode?'block':'none'; } };
- var ba2=document.getElementById('btnAdd'); if(ba2){ ba2.addEventListener('click',function(){ if(aptMode){ aptMode=false; btnAA.classList.remove('active'); } }); }
- map.on('click',function(e){ if(!aptMode) return; var a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]}; apts.push(a); aptSave(); aptRender(); openApt(a); });
- aptRender();
+ document.getElementById('aptX').onclick=()=>sheet.style.display='none';sheet.onclick=e=>{if(e.target===sheet)sheet.style.display='none';};
+ name.oninput=()=>{if(current && !current.shared){current.name=name.value;save();}};
+ function add(){if(!current || current.shared)return;const input=document.getElementById('roomAddInput');const seen=new Set(current.rooms.map(r=>r.no));input.value.trim().split(/[,、\s]+/).forEach(no=>{if(no && !seen.has(no)){current.rooms.push({no,status:'',date:''});seen.add(no);}});save();input.value='';render();}
+ document.getElementById('roomAddBtn').onclick=add;
+ document.getElementById('roomAddInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add();}};
+ document.getElementById('aptDel').onclick=()=>{if(!current || current.shared || !confirm('この建物と部屋の記録を削除しますか？'))return;local=local.filter(a=>a.id!==current.id);save();renderPins();sheet.style.display='none';};
+ document.getElementById('aptExport').onclick=()=>App.download('区域'+TPARAM+'_アパマン_'+new Date().toISOString().slice(0,10)+'.json',local);
+ document.getElementById('aptImport').onclick=()=>document.getElementById('aptFileIn').click();
+ document.getElementById('aptFileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());App.validateApartments(d);if(!confirm('この区域の端末内の建物記録を置き換えますか？'))return;App.store(key,JSON.stringify(d));local=d;current=null;sheet.style.display='none';renderPins();}catch(err){alert('読み込めませんでした。ファイル形式を確認してください。');}finally{e.target.value='';}};
+ document.getElementById('aptShare').onclick=()=>{const a=current;if(!a)return;const id=a.shared?a.id:'local-'+a.id;const row=[TPARAM,id,a.lat,a.lng,a.name,a.rooms.map(r=>r.no).join(',')].map(App.tsvCell).join('\t');App.copy(row);};
+ document.getElementById('btnAddApt').onclick=()=>{};
+ map.on('click',e=>{if(App.mode!=='btnAddApt')return;const a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]};local.push(a);save();current=a;renderPins();render();sheet.style.display='flex';});
+ renderPins();
+ const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=2125994133&single=true&output=csv';
+ App.feed('apartments','共有の建物・部屋番号',url,rows=>{
+   if(!rows.length || rows[0].slice(0,6).join(',')!=='区域番号,建物ID,緯度,経度,建物名,部屋番号')throw Error('共有建物の見出しが不正です');
+   const seen=new Set(), result=[];
+   rows.slice(1).forEach(c=>{
+     if(c.length!==6 || !/^\d+$/.test(c[0].trim()) || !/^[a-zA-Z0-9_-]+$/.test(c[1]) || ['__proto__','constructor','prototype'].includes(c[1]) || !c[2].trim() || !c[3].trim() || !App.coordinate(Number(c[2]),Number(c[3])))throw Error('建物情報の形式が不正です');
+     const identity=c[0].trim()+':'+c[1];if(seen.has(identity))throw Error('建物IDが重複しています');seen.add(identity);
+     if(c[0].trim()!==String(TPARAM))return;
+     result.push({shared:true,id:c[1],lat:Number(c[2]),lng:Number(c[3]),name:c[4],rooms:[...new Set(c[5].split(/[,、\s]+/).filter(Boolean))].map(no=>({no,status:'',date:''}))});
+   });return result;
+ },data=>{const old=current;shared=data;renderPins();if(old && old.shared){current=shared.find(a=>a.id===old.id);if(current)render();else sheet.style.display='none';}});
 })();
 
-;(function __dncInit(){
- if (typeof ISALL!=='undefined' && ISALL) return;
- var map=window.__LMAP; if(!map||typeof map.getCenter!=='function'){return setTimeout(__dncInit,200);}
- var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
- var KMAP={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
- function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
- var dncLayer=L.layerGroup().addTo(map);
- function dncIcon(){return L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]});}
- function loadDnc(){
-   fetch(DNC_CSV+'&_='+Date.now()).then(function(r){return r.ok?r.text():Promise.reject(r.status);}).then(function(text){
-     dncLayer.clearLayers();
-     var lines=text.split(/\r?\n/);
-     for(var i=1;i<lines.length;i++){
-       var raw=lines[i]; if(!raw||!raw.trim()) continue;
-       var c=raw.split(/[\t,]/);
-       var t=(c[0]||'').trim(); if(t!==String(TPARAM)) continue;
-       var lat=parseFloat(c[1]), lng=parseFloat(c[2]); if(isNaN(lat)||isNaN(lng)) continue;
-       var kind=(c[3]||'').trim(); var memo=(c.slice(4).join(',')||'').trim();
-       var label=KMAP[kind]||kind||'訪問お断り';
-       var m=L.marker([lat,lng],{icon:dncIcon()}).addTo(dncLayer);
-       m.bindPopup('<div style="font-size:14px"><b style="color:#b23b3b">'+esc(label)+'</b>'+(memo?'<br>'+esc(memo):'')+'<br><span style="font-size:11px;color:#888">共有：訪問お断り</span></div>');
-     }
-   }).catch(function(){});
- }
- loadDnc();
- var dncMode=false;
- var btn=document.getElementById('btnDnc');
- if(btn){ btn.onclick=function(){ dncMode=!dncMode; this.classList.toggle('active',dncMode); var hint=document.getElementById('hint'); if(hint){hint.textContent=dncMode?'訪問お断りの場所を地図でタップ':'地図をタップして家を記録'; hint.style.display=dncMode?'block':'none';} }; }
- map.on('click',function(e){
-   if(!dncMode) return;
-   var k=prompt('種別を数字で選んでください\n1=訪問お断り  2=犬に注意  3=立入禁止  4=注意','1');
-   if(k===null) return;
-   var codes={'1':'dnc','2':'dog','3':'noentry','4':'note'}; var code=codes[(k||'1').trim()]||'dnc';
-   var memo=prompt('メモ（任意）','')||'';
-   var row=String(TPARAM)+'\t'+e.latlng.lat.toFixed(6)+'\t'+e.latlng.lng.toFixed(6)+'\t'+code+'\t'+memo;
-   try{ navigator.clipboard.writeText(row); }catch(_){}
-   alert('共有シートに1行貼り付けてください（コピー済み）：\n\n'+row+'\n\n※ 反映は数分後。担当者が共有シートを管理します。');
+;(function dnc(){
+ if(ISALL || !window.TERRITORIES[TPARAM])return;
+ const map=window.__LMAP,layer=L.layerGroup().addTo(map);
+ const kinds={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
+ const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=0&single=true&output=csv';
+ App.feed('dnc','訪問お断り・注意事項',url,rows=>{
+   if(!rows.length || !['t','区域番号'].includes(rows[0][0].trim()) || rows[0].length!==5)throw Error('見出しが不正です');
+   return rows.slice(1).map(c=>{if(c.length!==5 || !/^\d+$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return c;});
+ },rows=>{
+   layer.clearLayers();rows.filter(c=>c[0].trim()===String(TPARAM)).forEach(c=>{
+     const marker=L.marker([Number(c[1]),Number(c[2])],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(layer);
+     marker.bindPopup('<b>'+App.escape(kinds[c[3].trim()])+'</b><p>'+App.escape(c[4])+'</p><small>全員に共有されている注意事項</small>');
+   });
+ });
+ document.getElementById('btnDnc').onclick=()=>{};
+ map.on('click',async e=>{
+   if(App.mode!=='btnDnc')return;
+   const code=prompt('種別を数字で選んでください\n1=訪問お断り  2=犬に注意  3=立入禁止  4=注意','1');if(code===null)return;
+   const kind={'1':'dnc','2':'dog','3':'noentry','4':'note'}[code.trim()];if(!kind){alert('1〜4で指定してください。');return;}
+   const memo=prompt('メモ（任意・氏名は入力しない）','');if(memo===null)return;
+   await App.copy([TPARAM,e.latlng.lat.toFixed(6),e.latlng.lng.toFixed(6),kind,memo].map(App.tsvCell).join('\t'));
  });
 })();
 

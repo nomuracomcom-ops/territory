@@ -1,0 +1,34 @@
+#app {position:relative;}
+.toolbar {bottom:84px;gap:6px;}
+.toolbar button {width:46px;height:46px;flex-direction:column;font-size:21px;}
+.toolbar small {font-size:10px;line-height:12px;}
+.toolbar .record-action {display:none;}
+.toolbar.record-open .record-action {display:flex;}
+.legend {bottom:84px;max-width:155px;font-size:12px;}
+.legend summary {cursor:pointer;font-weight:600;padding:5px;}
+.svc-pill {bottom:max(16px,env(safe-area-inset-bottom));max-width:calc(100% - 28px);font-size:14px;}
+.sync-panel {background:#f3f6fa;font-size:12px;padding:7px 12px;position:relative;z-index:1001;}
+.sync-panel summary {cursor:pointer;}
+.sync-panel p {margin:7px 0;}
+.sync-panel button,.backup-tools button,#aptShare {border:1px solid #aab5c2;border-radius:8px;background:#fff;padding:10px;margin:4px 0;cursor:pointer;}
+.sync-panel[open] #syncDetails {max-height:160px;overflow:auto;}
+.hint {top:100px;max-width:70%;text-align:center;font-size:12px;}
+.ov-listbtn {top:92px;}
+.privacy-note {font-size:12px;line-height:1.7;color:#52616e;background:#f3f6fa;padding:9px;border-radius:8px;}
+.backup-tools {padding:8px 0 12px;}
+.backup-tools p {font-size:12px;}
+.room {flex-wrap:wrap;}
+.room .rbtns button {min-height:40px;padding:7px;}
+.room .rno {max-width:100%;overflow-wrap:anywhere;}
+.addroom input {min-width:0;}
+.sheet .card {max-height:85dvh;padding-bottom:max(24px,env(safe-area-inset-bottom));}
+.sheet input,.sheet textarea,.lp textarea {font-size:16px;}
+[hidden] {display:none !important;}
+#undoBar {position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:1800;background:#1f2937;color:#fff;border-radius:10px;padding:10px;max-width:95%;white-space:nowrap;font-size:13px;}
+#undoBar button {background:#fff;border:0;border-radius:5px;padding:9px;margin-left:6px;}
+#recordNotice {position:fixed;top:0;left:0;right:0;z-index:3000;background:#fff0d0;color:#6e3800;padding:15px;font-size:14px;}
+.copy-sheet {position:fixed;inset:0;background:#0007;z-index:2500;display:flex;align-items:center;justify-content:center;padding:20px;}
+.copy-sheet>div {background:white;border-radius:12px;padding:20px;max-width:520px;width:100%;}
+.copy-sheet textarea {width:100%;height:180px;font-size:16px;}
+.copy-sheet button {padding:12px;margin-top:10px;}
+@media(max-height:600px){.toolbar{bottom:75px;gap:3px}.toolbar button{width:40px;height:40px}.hint{top:65px}.legend{bottom:75px}}
