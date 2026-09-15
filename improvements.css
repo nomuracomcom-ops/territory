@@ -12,7 +12,7 @@
 .sync-panel p {margin:7px 0;}
 .sync-panel button,.backup-tools button,#aptShare {border:1px solid #aab5c2;border-radius:8px;background:#fff;padding:10px;margin:4px 0;cursor:pointer;}
 .sync-panel[open] #syncDetails {max-height:160px;overflow:auto;}
-.hint {top:100px;max-width:70%;text-align:center;font-size:12px;}
+.hint {display:none !important;}
 .ov-listbtn {top:92px;}
 .privacy-note {font-size:12px;line-height:1.7;color:#52616e;background:#f3f6fa;padding:9px;border-radius:8px;}
 .backup-tools {padding:8px 0 12px;}
