@@ -1,10 +1,10 @@
 #app {position:relative;}
-.toolbar {bottom:84px;gap:6px;}
-.toolbar button {width:46px;height:46px;flex-direction:column;font-size:21px;}
-.toolbar small {font-size:10px;line-height:12px;}
-.toolbar .record-action {display:none;}
-.toolbar.record-open .record-action {display:flex;}
-.legend {bottom:84px;max-width:155px;font-size:12px;}
+.toolbar {left:auto;right:10px;bottom:84px;gap:6px;}
+.toolbar button {width:46px;height:46px;font-size:21px;}
+.toolbar button:not(#btnRecord) {display:none;}
+.toolbar.record-open button:not(#btnRecord) {display:flex;}
+.toolbar #btnRecord {font-size:25px;}
+.legend {left:10px;right:auto;bottom:84px;max-width:155px;font-size:12px;}
 .legend summary {cursor:pointer;font-weight:600;padding:5px;}
 .svc-pill {bottom:max(16px,env(safe-area-inset-bottom));max-width:calc(100% - 28px);font-size:14px;}
 .sync-panel {background:#f3f6fa;font-size:12px;padding:7px 12px;position:relative;z-index:1001;}
