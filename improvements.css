@@ -1,10 +1,10 @@
 #app {position:relative;}
-.toolbar {left:auto;right:10px;bottom:84px;gap:6px;}
+.toolbar {left:auto;right:10px;bottom:max(16px,env(safe-area-inset-bottom));gap:6px;flex-direction:column-reverse;}
 .toolbar button {width:46px;height:46px;font-size:21px;}
 .toolbar button:not(#btnRecord) {display:none;}
 .toolbar.record-open button:not(#btnRecord) {display:flex;}
 .toolbar #btnRecord {font-size:25px;}
-.legend {left:10px;right:auto;bottom:84px;max-width:155px;font-size:12px;}
+.legend {left:10px;right:auto;bottom:max(16px,env(safe-area-inset-bottom));max-width:155px;font-size:12px;}
 .legend summary {cursor:pointer;font-weight:600;padding:5px;}
 .svc-pill {bottom:max(16px,env(safe-area-inset-bottom));max-width:calc(100% - 28px);font-size:14px;}
 .sync-panel {background:#f3f6fa;font-size:12px;padding:7px 12px;position:relative;z-index:1001;}
@@ -31,4 +31,4 @@
 .copy-sheet>div {background:white;border-radius:12px;padding:20px;max-width:520px;width:100%;}
 .copy-sheet textarea {width:100%;height:180px;font-size:16px;}
 .copy-sheet button {padding:12px;margin-top:10px;}
-@media(max-height:600px){.toolbar{bottom:75px;gap:3px}.toolbar button{width:40px;height:40px}.hint{top:65px}.legend{bottom:75px}}
+@media(max-height:600px){.toolbar{gap:3px}.toolbar button{width:40px;height:40px}.hint{top:65px}}
