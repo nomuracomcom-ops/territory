@@ -105,6 +105,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .room .rdel{color:#d9333f;background:none;border:none;font-size:16px;cursor:pointer;}
 .aptsum{font-size:12px;color:#0e8c8c;background:#e9f6f6;border-radius:8px;padding:7px 10px;margin-bottom:8px;}
 .toolbar button#btnAddApt.active{background:#0e8c8c;color:#fff;}
+.dnc-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #b23b3b;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
 </head>
 <body>
@@ -125,6 +127,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" title="家を追加">➕</button>
 <button id="btnAddApt" title="アパート/マンションを追加">🏢</button>
+<button id="btnDnc" title="訪問お断りを追加">🚫</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
@@ -133,7 +136,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <span class="dot" style="background:#1f6feb"></span>再訪問<br>
 <span class="dot" style="background:#2ea043"></span>投函<br>
 <span class="dot" style="background:#d9333f"></span>訪問しない<br>
-<span class="dot" style="background:#9E9E9E"></span>留守
+<span class="dot" style="background:#9E9E9E"></span>留守<br>
+🚫 訪問お断り（共有）
 </div>
 
 <div class="sheet" id="sheet">
@@ -611,6 +615,45 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  var ba2=document.getElementById('btnAdd'); if(ba2){ ba2.addEventListener('click',function(){ if(aptMode){ aptMode=false; btnAA.classList.remove('active'); } }); }
  map.on('click',function(e){ if(!aptMode) return; var a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]}; apts.push(a); aptSave(); aptRender(); openApt(a); });
  aptRender();
+})();
+
+;(function(){
+ if (typeof ISALL!=='undefined' && ISALL) return;
+ var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
+ var KMAP={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
+ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+ var dncLayer=L.layerGroup().addTo(map);
+ function dncIcon(){return L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]});}
+ function loadDnc(){
+   fetch(DNC_CSV+'&_='+Date.now()).then(function(r){return r.ok?r.text():Promise.reject(r.status);}).then(function(text){
+     dncLayer.clearLayers();
+     var lines=text.split(/\r?\n/);
+     for(var i=1;i<lines.length;i++){
+       var raw=lines[i]; if(!raw||!raw.trim()) continue;
+       var c=raw.split(/[\t,]/);
+       var t=(c[0]||'').trim(); if(t!==String(TPARAM)) continue;
+       var lat=parseFloat(c[1]), lng=parseFloat(c[2]); if(isNaN(lat)||isNaN(lng)) continue;
+       var kind=(c[3]||'').trim(); var memo=(c.slice(4).join(',')||'').trim();
+       var label=KMAP[kind]||kind||'訪問お断り';
+       var m=L.marker([lat,lng],{icon:dncIcon()}).addTo(dncLayer);
+       m.bindPopup('<div style="font-size:14px"><b style="color:#b23b3b">'+esc(label)+'</b>'+(memo?'<br>'+esc(memo):'')+'<br><span style="font-size:11px;color:#888">共有：訪問お断り</span></div>');
+     }
+   }).catch(function(){});
+ }
+ loadDnc();
+ var dncMode=false;
+ var btn=document.getElementById('btnDnc');
+ if(btn){ btn.onclick=function(){ dncMode=!dncMode; this.classList.toggle('active',dncMode); var hint=document.getElementById('hint'); if(hint){hint.textContent=dncMode?'訪問お断りの場所を地図でタップ':'地図をタップして家を記録'; hint.style.display=dncMode?'block':'none';} }; }
+ map.on('click',function(e){
+   if(!dncMode) return;
+   var k=prompt('種別を数字で選んでください\n1=訪問お断り  2=犬に注意  3=立入禁止  4=注意','1');
+   if(k===null) return;
+   var codes={'1':'dnc','2':'dog','3':'noentry','4':'note'}; var code=codes[(k||'1').trim()]||'dnc';
+   var memo=prompt('メモ（任意）','')||'';
+   var row=String(TPARAM)+'\t'+e.latlng.lat.toFixed(6)+'\t'+e.latlng.lng.toFixed(6)+'\t'+code+'\t'+memo;
+   try{ navigator.clipboard.writeText(row); }catch(_){}
+   alert('共有シートに1行貼り付けてください（コピー済み）：\n\n'+row+'\n\n※ 反映は数分後。担当者が共有シートを管理します。');
+ });
 })();
 
 </script>
