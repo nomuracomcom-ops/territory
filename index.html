@@ -210,6 +210,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js"></script>
+<script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
 <script src="status.js"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
@@ -575,7 +576,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 } // end buildTerritory
 ;(function(){
  if (typeof ISALL!=='undefined' && ISALL) return;
- var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
+ var map=window.__LMAP; var sheetEl=document.getElementById('aptSheet'); if(!sheetEl) return;
  var APT_ID = TERR_ID + '-apt';
  var apts = (function(){ try{return JSON.parse(localStorage.getItem(APT_ID))||[]}catch(e){return []} })();
  function aptSave(){ localStorage.setItem(APT_ID, JSON.stringify(apts)); }
@@ -619,7 +620,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 
 ;(function(){
  if (typeof ISALL!=='undefined' && ISALL) return;
- var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
+ var map=window.__LMAP; var DNC_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?output=csv';
  var KMAP={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  var dncLayer=L.layerGroup().addTo(map);
