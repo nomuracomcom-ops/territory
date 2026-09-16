@@ -146,15 +146,15 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="sheet" id="sheet">
 <div class="card">
 <h3>記録一覧 <span class="x" id="sheetX">✕</span></h3>
-<p class="privacy-note">家・部屋の訪問記録と奉仕時間は、この端末だけに保存されます。氏名は入力しないでください。</p>
+<p class="privacy-note">家・部屋の訪問記録と奉仕時間は、この端末だけに保存されます。</p>
 <div class="backup-tools"><button id="backupAll">全記録をバックアップ</button><button id="restoreAll">全記録を復元</button><input id="backupFile" type="file" accept="application/json" hidden><p id="backupStatus">定期的にバックアップしてください。</p></div>
 <div class="sec-title">🚶 奉仕記録</div>
 <div class="svc-sum" id="svcSum"></div>
 <div id="svcBody"></div>
-<div class="sec-title div">🏠 家の記録</div>
+<div class="sec-title div">🏠 訪問記録</div>
 <div id="listBody"></div>
 <div class="tools">
-<button id="btnExport">この区域の家を書き出し</button>
+<button id="btnExport">この区域の訪問記録を書き出し</button>
 <button id="btnImport">読み込み</button>
 </div>
 <input type="file" id="fileIn" accept="application/json" style="display:none">
@@ -357,9 +357,9 @@ updateCount();
 }
 function popupHtml(h){
 const d = document.createElement('div'); d.className="lp";
-d.innerHTML = '<h4>家の記録</h4>'+
+d.innerHTML = '<h4>訪問記録</h4>'+
 '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
-'<textarea placeholder="メモ（氏名は入力しない）">'+App.escape(h.memo||'')+'</textarea>'+
+'<textarea placeholder="メモ">'+App.escape(h.memo||'')+'</textarea>'+
 '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
 '<div class="row"><span class="date">'+App.escape(h.date||'')+'</span><button class="del">削除</button></div>';
 return d;
@@ -467,7 +467,7 @@ a.download='区域'+TPARAM+'_記録_'+new Date().toISOString().slice(0,10)+'.jso
 document.getElementById('btnImport').onclick=function(){document.getElementById('fileIn').click();};
 document.getElementById('fileIn').onchange=function(e){
 const f=e.target.files[0];if(!f)return;const r=new FileReader();
-r.onload=function(){try{const d=JSON.parse(r.result);App.validateHouses(d); if(!confirm('この区域の家の記録を置き換えますか？'))return; houses=d;save();render();renderList();alert('読み込みました');}catch(err){alert('読み込めませんでした');}};
+r.onload=function(){try{const d=JSON.parse(r.result);App.validateHouses(d); if(!confirm('この区域の訪問記録を置き換えますか？'))return; houses=d;save();render();renderList();alert('読み込みました');}catch(err){alert('読み込めませんでした');}};
 r.readAsText(f);
 };
 
@@ -673,8 +673,10 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    if(App.mode!=='btnDnc')return;
    const code=prompt('種別を数字で選んでください\n1=訪問お断り  2=犬に注意  3=立入禁止  4=注意','1');if(code===null)return;
    const kind={'1':'dnc','2':'dog','3':'noentry','4':'note'}[code.trim()];if(!kind){alert('1〜4で指定してください。');return;}
-   const memo=prompt('メモ（任意・氏名は入力しない）','');if(memo===null)return;
-   await App.copy([TPARAM,e.latlng.lat.toFixed(6),e.latlng.lng.toFixed(6),kind,memo].map(App.tsvCell).join('\t'));
+   const address=prompt('住所を入力してください','');if(address===null)return;
+   if(!address.trim()){alert('住所を入力してください。');return;}
+   const d=new Date(), requestedAt=d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+   await App.copy([TPARAM,e.latlng.lat.toFixed(6),e.latlng.lng.toFixed(6),kind,requestedAt+' '+address.trim()].map(App.tsvCell).join('\t'));
  });
 })();
 
