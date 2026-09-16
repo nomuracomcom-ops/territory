@@ -25,8 +25,9 @@
 .sheet .card {max-height:85dvh;padding-bottom:max(24px,env(safe-area-inset-bottom));}
 .sheet input,.sheet textarea,.lp textarea {font-size:16px;}
 [hidden] {display:none !important;}
-#undoBar {margin:0 0 12px;font-size:13px;}
-#undoBar button {background:#fff;color:#52616e;border:1px solid #aab5c2;border-radius:8px;padding:10px;cursor:pointer;}
+.undo-control {margin-top:8px !important;border-radius:5px;overflow:hidden;box-shadow:0 1px 5px rgba(0,0,0,.35);}
+.undo-control button {display:block;width:34px;height:34px;border:0;background:#fff;color:#374151;font-size:23px;line-height:34px;padding:0;cursor:pointer;}
+.undo-control button:active {background:#eef2f7;}
 #recordNotice {position:fixed;top:0;left:0;right:0;z-index:3000;background:#fff0d0;color:#6e3800;padding:15px;font-size:14px;}
 .copy-sheet {position:fixed;inset:0;background:#0007;z-index:2500;display:flex;align-items:center;justify-content:center;padding:20px;}
 .copy-sheet>div {background:white;border-radius:12px;padding:20px;max-width:520px;width:100%;}
