@@ -6,6 +6,7 @@
 .toolbar #btnRecord {font-size:25px;}
 .legend {left:10px;right:auto;bottom:max(16px,env(safe-area-inset-bottom));max-width:155px;font-size:12px;}
 .legend summary {cursor:pointer;font-weight:600;padding:5px;}
+.legend[open] {bottom:calc(max(16px,env(safe-area-inset-bottom)) + 60px);}
 .svc-pill {bottom:max(16px,env(safe-area-inset-bottom));max-width:calc(100% - 28px);font-size:14px;}
 .sync-panel {background:#f3f6fa;font-size:12px;padding:7px 12px;position:relative;z-index:1001;}
 .sync-panel summary {cursor:pointer;}
