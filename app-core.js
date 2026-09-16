@@ -62,7 +62,7 @@ window.App = (() => {
       const typing=document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
       if(!(typing && undo && undo.key===k && undo.typing && Date.now()-undo.time<1500))undo={key:k,old,typing,time:Date.now()};
       else undo.time=Date.now();
-      const bar=document.getElementById('undoBar');if(bar){bar.hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(()=>{bar.hidden=true;undo=null;},15000);}
+      const button=document.getElementById('undoBtn'),control=button&&button.closest('.undo-control');if(control){control.hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(()=>{control.hidden=true;undo=null;},15000);}
     }
   }
   function remove(k){try{localStorage.removeItem(k);}catch(e){notice('記録を保存できませんでした。再度操作してください。');throw e;}}
@@ -82,9 +82,9 @@ window.App = (() => {
   const api={escape,coordinate,parseCSV,feed,feedStatus,store,remove,backup,restore,validateBackup,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
   document.addEventListener('DOMContentLoaded',()=>{
     document.body.insertAdjacentHTML('beforeend','<div id="recordNotice" role="alert" hidden></div><div id="copySheet" class="copy-sheet" hidden><div><p>自動コピーできませんでした。下の内容を選択してコピーしてください。</p><textarea id="copyText" aria-label="共有用の内容" readonly></textarea><button id="copyClose">閉じる</button></div></div>');
-    document.querySelector('#sheet h3').insertAdjacentHTML('afterend','<div id="undoBar" hidden><button id="undoBtn">直前の記録変更を元に戻す</button></div>');
+    const zoomTools=document.querySelector('.leaflet-top.leaflet-right');if(zoomTools)zoomTools.insertAdjacentHTML('beforeend','<div class="leaflet-control undo-control" hidden><button id="undoBtn" type="button" title="直前の記録を元に戻す" aria-label="直前の記録を元に戻す">↶</button></div>');
     document.getElementById('copyClose').onclick=()=>document.getElementById('copySheet').hidden=true;
-    document.getElementById('undoBtn').onclick=()=>{if(!undo)return;try{if(undo.old===null)localStorage.removeItem(undo.key);else localStorage.setItem(undo.key,undo.old);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
+    const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{if(undo.old===null)localStorage.removeItem(undo.key);else localStorage.setItem(undo.key,undo.old);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
     document.getElementById('syncRetry').onclick=()=>reloaders.forEach(f=>f());
     window.addEventListener('online',()=>reloaders.forEach(f=>f()));
     window.addEventListener('offline',()=>{feedStates.forEach((s,id)=>feedStatus(id,s.label,'通信なし・最新情報は未確認',s.time));});
