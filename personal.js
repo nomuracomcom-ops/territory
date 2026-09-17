@@ -1,7 +1,7 @@
 /* Personal home, one recent-map entry per territory, and deliberate area cleanup. */
 window.Personal = (() => {
-  const HISTORY='map-history', disposable=['met','posted','away'];
-  let shared=[], panel='maps';
+  const HISTORY='map-history', HIDDEN='map-history-hidden', disposable=['met','posted','away'];
+  let shared=[], panel='maps', editingMaps=false;
   const territoryName=t=>(window.TERRITORIES||{})[t]?.name||'区域 '+t;
   const known=t=>Object.prototype.hasOwnProperty.call(window.TERRITORIES||{},t);
   function read(key,fallback) {
@@ -25,14 +25,15 @@ window.Personal = (() => {
   }
   function remember(openTerr) {
     // An absent date means evidence of previous use, never an invented opening date.
-    const old=read(HISTORY,[]),byId=new Map(old.map(x=>[x.terr,{...x}]));
-    const add=t=>{if(/^\d+$/.test(t) && !byId.has(t))byId.set(t,{terr:t,name:territoryName(t),lastOpened:null});};
+    const old=read(HISTORY,[]),hidden=new Set(read(HIDDEN,[])),byId=new Map(old.map(x=>[x.terr,{...x}]));
+    const add=t=>{if(/^\d+$/.test(t) && !hidden.has(t) && !byId.has(t))byId.set(t,{terr:t,name:territoryName(t),lastOpened:null});};
     for(const [t,a] of scan())if(a.houses.length || a.local.length || Object.values(a.saved).some(r=>r.length))add(t);
     for(const log of safeRead('svc-log',[]))if(log.terr)add(String(log.terr));
     const active=safeRead('svc-active',null);if(active)add(String(active.terr));
-    if(openTerr && known(openTerr))byId.set(openTerr,{terr:openTerr,name:territoryName(openTerr),lastOpened:Date.now()});
+    if(openTerr && known(openTerr)){hidden.delete(openTerr);byId.set(openTerr,{terr:openTerr,name:territoryName(openTerr),lastOpened:Date.now()});}
     const rows=[...byId.values()];
     if(JSON.stringify(old)!==JSON.stringify(rows))App.store(HISTORY,JSON.stringify(rows));
+    if(JSON.stringify(read(HIDDEN,[]))!==JSON.stringify([...hidden]))App.store(HIDDEN,JSON.stringify([...hidden]));
     return rows;
   }
   function usedMaps() {
@@ -80,13 +81,33 @@ window.Personal = (() => {
   function mapLink(terr) {return '?t='+encodeURIComponent(terr);}
   function recordLink(row) {return mapLink(row.terr)+'#'+new URLSearchParams({record:row.provider,item:String(row.id)});}
   function empty(host,message) {host.appendChild(el('p','home-empty',message));}
+  function removeMaps(territories) {
+    const targets=new Set(territories),history=read(HISTORY,[]),hidden=new Set(read(HIDDEN,[]));
+    history.filter(x=>targets.has(x.terr)).forEach(x=>hidden.add(x.terr));
+    const expected={[HISTORY]:localStorage.getItem(HISTORY),[HIDDEN]:localStorage.getItem(HIDDEN)};
+    const changes={[HISTORY]:JSON.stringify(history.filter(x=>!targets.has(x.terr))),[HIDDEN]:JSON.stringify([...hidden])};
+    App.storeBatch(changes,expected);
+  }
+  function requestRemoveMap(terr) {
+    const entry=usedMaps().find(x=>x.terr===terr);if(!entry)return;
+    if(!confirm('区域 '+terr+'「'+(known(terr)?territoryName(terr):entry.name)+'」を使った地図から消しますか？\n\n再訪問・訪問記録・奉仕時間は消えません。もう一度この地図を開くと、履歴に戻ります。'))return;
+    try{removeMaps([terr]);render();}catch(e){alert('履歴を消せませんでした。端末の空き容量を確認してください。');}
+  }
+  function requestClearMaps() {
+    const history=usedMaps();if(!history.length)return;
+    if(!confirm('使った地図の履歴 '+history.length+'件をすべて消しますか？\n\n再訪問・訪問記録・奉仕時間は消えません。地図を開くと、その区域は再び履歴に追加されます。'))return;
+    try{removeMaps(history.map(x=>x.terr));editingMaps=false;render();}catch(e){alert('履歴を消せませんでした。端末の空き容量を確認してください。');}
+  }
   function renderMaps(rows,query) {
     const host=document.getElementById('homeMaps');host.replaceChildren();
     const history=usedMaps(),list=history.filter(x=>(x.terr+' '+(known(x.terr)?territoryName(x.terr):x.name)).toLocaleLowerCase().includes(query));
     document.getElementById('homeMapCount').textContent=history.length;
+    document.getElementById('homeMapEdit').hidden=!history.length;
+    document.getElementById('homeMapEdit').textContent=editingMaps?'編集を終了':'履歴を編集';
+    document.getElementById('homeMapClear').hidden=!editingMaps || !history.length;
     if(!list.length){empty(host,history.length?'該当する地図はありません。':'まだ使用履歴はありません。「区域を探す」から地図を開くと、ここに残ります。');return;}
     for(const entry of list){
-      const available=known(entry.terr),link=el(available?'a':'div','home-map');if(available)link.href=mapLink(entry.terr);
+      const available=known(entry.terr),row=el('div','home-map-row'),link=el(available?'a':'div','home-map');if(available)link.href=mapLink(entry.terr);
       link.appendChild(el('span','home-map-number',entry.terr));
       const text=el('span','home-map-text');text.appendChild(el('strong','',available?territoryName(entry.terr):entry.name));
       const date=entry.lastOpened===null?'以前の記録から追加':'最終表示 '+Records.displayDate(Records.localDay(entry.lastOpened));
@@ -95,7 +116,9 @@ window.Personal = (() => {
       const count=rows.filter(r=>r.terr===entry.terr && r.status==='revisit').length;
       if(count)link.appendChild(el('span','home-revisit-count','再訪問 '+count));
       if(available)link.appendChild(el('span','home-arrow','›'));
-      host.appendChild(link);
+      row.appendChild(link);
+      if(editingMaps){const remove=el('button','home-map-remove','削除');remove.type='button';remove.setAttribute('aria-label','区域 '+entry.terr+' の使用履歴を削除');remove.onclick=()=>requestRemoveMap(entry.terr);row.appendChild(remove);}
+      host.appendChild(row);
     }
   }
   function renderRevisits(rows,query) {
@@ -153,6 +176,8 @@ window.Personal = (() => {
     document.getElementById('homeMonth').value=Records.localDay().slice(0,7);
     document.getElementById('homeMonth').onchange=renderService;
     document.getElementById('homeSearch').oninput=render;
+    document.getElementById('homeMapEdit').onclick=()=>{editingMaps=!editingMaps;render();};
+    document.getElementById('homeMapClear').onclick=requestClearMaps;
     document.querySelectorAll('[data-home-panel]').forEach(b=>b.onclick=()=>select(b.dataset.homePanel));
     document.getElementById('homeRevisitShortcut').onclick=()=>select('revisits');
     document.getElementById('homeServiceShortcut').onclick=()=>select('service');
@@ -165,5 +190,5 @@ window.Personal = (() => {
     try{remember(window.__LMAP && t && known(t)?t:null);}catch(e){App.notice('地図の履歴を保存できませんでした。元の履歴は保持しています。');}
     render();
   }
-  return {mount,start,remember,usedMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
+  return {mount,start,remember,usedMaps,removeMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
 })();

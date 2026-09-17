@@ -96,6 +96,32 @@ test('opening a map persists one entry, sorts most recently opened first, and ke
  home.input('homeSearch','1番町B');assert.equal(home.document.querySelectorAll('.home-map').length,1);assert.equal(home.document.querySelector('.home-map').getAttribute('href'),'?t=2');
 });
 
+test('used map history can be deleted individually without deleting records and returns only when reopened',async()=>{
+ const saved={
+   'map-history':JSON.stringify([{terr:'4',name:'区域4',lastOpened:200},{terr:'2',name:'区域2',lastOpened:100}]),
+   'terr-4':JSON.stringify([{id:1,lat:34,lng:136,status:'revisit',date:'2026-09-17',memo:'残す'}]),
+   'svc-log':JSON.stringify([{id:1,start:100,end:200,min:1,date:'2026-09-17',terr:'4'}])
+ };
+ const a=app('home',undefined,saved);await a.flush();a.click('homeMapEdit');
+ assert.equal(a.document.querySelectorAll('.home-map-remove').length,2);a.document.querySelector('[aria-label="区域 4 の使用履歴を削除"]').click();
+ assert.deepEqual(JSON.parse(a.data.get('map-history')).map(x=>x.terr),['2']);assert.deepEqual(JSON.parse(a.data.get('map-history-hidden')),['4']);
+ assert.equal(a.data.get('terr-4'),saved['terr-4']);assert.equal(a.data.get('svc-log'),saved['svc-log']);assert.equal(a.document.getElementById('homeRevisitCount').textContent,'1');
+ const homeAgain=app('home',undefined,Object.fromEntries(a.data));await homeAgain.flush();assert.deepEqual(JSON.parse(homeAgain.data.get('map-history')).map(x=>x.terr),['2']);
+ const reopened=app('4',undefined,Object.fromEntries(homeAgain.data));await reopened.flush();assert.deepEqual(JSON.parse(reopened.data.get('map-history')).map(x=>x.terr),['2','4']);assert.deepEqual(JSON.parse(reopened.data.get('map-history-hidden')),[]);
+});
+
+test('all used map history can be cleared or cancelled without changing other personal data',async()=>{
+ const saved={
+   'map-history':JSON.stringify([{terr:'4',name:'区域4',lastOpened:200},{terr:'2',name:'区域2',lastOpened:100}]),
+   'terr-4':JSON.stringify([{id:1,lat:34,lng:136,status:'revisit',date:'2026-09-17',memo:'残す'}]),
+   'svc-active':JSON.stringify({start:100,terr:'4'})
+ };
+ const a=app('home',undefined,saved);await a.flush();a.click('homeMapEdit');a.context.confirm=()=>false;a.click('homeMapClear');assert.deepEqual(JSON.parse(a.data.get('map-history')).map(x=>x.terr),['4','2']);
+ a.context.confirm=()=>true;a.click('homeMapClear');assert.deepEqual(JSON.parse(a.data.get('map-history')),[]);assert.deepEqual(new Set(JSON.parse(a.data.get('map-history-hidden'))),new Set(['4','2']));
+ assert.equal(a.data.get('terr-4'),saved['terr-4']);assert.equal(a.data.get('svc-active'),saved['svc-active']);assert.equal(a.document.getElementById('homeMapCount').textContent,'0');
+ const reloaded=app('home',undefined,Object.fromEntries(a.data));await reloaded.flush();assert.deepEqual(JSON.parse(reloaded.data.get('map-history')),[]);assert.match(reloaded.document.getElementById('homeMaps').textContent,/まだ使用履歴/);
+});
+
 test('legacy records seed history without inventing dates; global revisits merge rooms and timer survives home',async()=>{
  const today=new Date(),start=today.getTime()-60000,day=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
  const saved={

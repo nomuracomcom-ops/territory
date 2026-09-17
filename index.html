@@ -139,7 +139,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 <label id="homeSearchLabel" class="home-search"><span class="visually-hidden">個人記録を検索</span><input id="homeSearch" type="search" placeholder="区域番号・地名で探す" autocomplete="off"></label>
 <section id="homePanel-maps" aria-label="使った地図">
-<p class="home-help">最近開いた順。訪問記録を整理しても、この履歴は残ります。</p><div id="homeMaps"></div>
+<div class="home-map-heading"><p class="home-help">最近開いた順。訪問記録を整理しても、この履歴は残ります。</p><button id="homeMapEdit" type="button" hidden>履歴を編集</button></div>
+<div id="homeMaps"></div><button id="homeMapClear" class="home-map-clear" type="button" hidden>使った地図の履歴をすべて削除</button>
 </section>
 <section id="homePanel-revisits" aria-label="再訪問" hidden><div id="homeRevisits"></div></section>
 <section id="homePanel-service" aria-label="奉仕時間" hidden>
@@ -263,9 +264,9 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20260917-home1"></script>
+<script src="app-core.js?v=20260917-history1"></script>
 <script src="records.js?v=20260917-home1"></script>
-<script src="personal.js?v=20260917-home1"></script>
+<script src="personal.js?v=20260917-history1"></script>
 <script src="status.js?v=20260915-2"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'home');

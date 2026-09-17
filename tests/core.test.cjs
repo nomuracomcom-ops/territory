@@ -55,3 +55,8 @@ test('map history is included in backups and invalid or duplicate history is rej
    assert.throws(()=>app.restore({format:'territory-backup',version:1,records:{'terr-4':'[]','map-history':JSON.stringify(value)}}));assert.equal(localStorage.getItem('terr-4'),null);assert.equal(localStorage.getItem('map-history'),JSON.stringify(history));
  }
 });
+
+test('hidden map history is backed up and rejects invalid or duplicate territory numbers',()=>{
+ const {app,localStorage,data}=setup();localStorage.setItem('map-history-hidden',JSON.stringify(['4','2']));const backup=app.backup();data.clear();app.restore(backup);assert.deepEqual(JSON.parse(localStorage.getItem('map-history-hidden')),['4','2']);
+ for(const value of [['4','4'],['all'],[4]])assert.throws(()=>app.validateBackup({format:'territory-backup',version:1,records:{'map-history-hidden':JSON.stringify(value)}}));
+});
