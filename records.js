@@ -1,4 +1,4 @@
-/* Personal record presentation only. No new storage keys or network requests. */
+/* Current visit record presentation. Persistent personal navigation lives in personal.js. */
 window.Records = (() => {
   const states = {
     met: { label: '会えた', symbol: '●' }, revisit: { label: '再訪問', symbol: '↗' },
@@ -55,8 +55,29 @@ window.Records = (() => {
     }
     return result;
   }
-  function register(name, read, open) { providers.set(name,{read,open}); }
+  function register(name, read, open, reload) { providers.set(name,{read,open,reload}); }
+  function reload() { for(const p of providers.values())if(p.reload)p.reload(); }
   function entries() { return [...providers.entries()].flatMap(([provider,p])=>p.read().map(r=>({...r,provider}))); }
+  let linkedOpened=false;
+  function openLinked() {
+    if(linkedOpened)return;
+    const target=new URLSearchParams((location.hash||'').replace(/^#/,'')),provider=target.get('record'),id=target.get('item');
+    if(!provider || !id || !providers.has(provider))return;
+    const row=entries().find(r=>r.provider===provider && String(r.id)===id);
+    if(row && row.available!==false && App.coordinate(row.lat,row.lng)){
+      linkedOpened=true;document.getElementById('sheet').style.display='none';providers.get(provider).open(row);
+    }else{render('revisit');document.getElementById('sheet').style.display='flex';}
+  }
+  const sharedURL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=2125994133&single=true&output=csv';
+  function decodeBuildings(rows) {
+    if(!rows.length || rows[0].slice(0,6).join(',')!=='区域番号,建物ID,緯度,経度,建物名,部屋番号')throw Error('共有建物の見出しが不正です');
+    const seen=new Set();
+    return rows.slice(1).map(c=>{
+      if(c.length!==6 || !/^\d+$/.test(c[0].trim()) || !/^[a-zA-Z0-9_-]+$/.test(c[1]) || ['__proto__','constructor','prototype'].includes(c[1]) || !c[2].trim() || !c[3].trim() || !App.coordinate(Number(c[2]),Number(c[3])))throw Error('建物情報の形式が不正です');
+      const identity=c[0].trim()+':'+c[1];if(seen.has(identity))throw Error('建物IDが重複しています');seen.add(identity);
+      return {terr:c[0].trim(),shared:true,id:c[1],lat:Number(c[2]),lng:Number(c[3]),name:c[4],rooms:[...new Set(c[5].split(/[,、\s]+/).filter(Boolean))].map(no=>({no,status:'',date:''}))};
+    });
+  }
   function matches(row, filter, day=localDay()) {
     return filter==='all' || (filter==='today' ? activity.includes(row.status) && dayKey(row.date)===day : row.status===filter);
   }
@@ -124,5 +145,5 @@ window.Records = (() => {
       item.onclick=()=>{document.getElementById('sheet').style.display='none';providers.get(row.provider).open(row);};host.appendChild(item);
     }
   }
-  return {localDay,dayKey,summarize,encouragement,apartmentRows,register,entries,render};
+  return {localDay,dayKey,summarize,encouragement,apartmentRows,register,reload,entries,render,openLinked,sharedURL,decodeBuildings,displayDate};
 })();

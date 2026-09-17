@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1f6feb">
-<title>区域1 桔梗が丘1番町A</title>
+<title>桔梗が丘 電子区域地図</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{
@@ -108,7 +108,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .dnc-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #b23b3b;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
-<link rel="stylesheet" href="improvements.css?v=20260916-records2">
+<link rel="stylesheet" href="improvements.css?v=20260917-home1">
 </head>
 <body>
 <div id="app">
@@ -116,12 +116,42 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <span class="no">区域 1</span>
 <span class="name">桔梗が丘1番町A</span>
 <span class="count" id="count">0件</span>
+<a id="btnHome" class="home-button" href="?t=home" title="ホーム" aria-label="ホーム"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></a>
 </header>
 <div id="notice">
 <details class="sync-panel"><summary id="syncSummary">共有情報を確認中…</summary><div id="syncDetails" aria-live="polite"></div><button id="syncRetry">再取得</button></details>
 <div class="revisit-bar" id="revisit"></div>
 </div>
 <div id="map"></div>
+<main id="personalHome" hidden>
+<div class="home-content">
+<div class="home-intro"><div><p>桔梗が丘会衆</p><h1>次の訪問へ</h1></div><a class="home-browse" href="?t=all">区域を探す <span aria-hidden="true">↗</span></a></div>
+<a id="homeActive" class="home-active" hidden></a>
+<div class="home-summary">
+<button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small id="homeDays">0日</small></button>
+<button id="homeRevisitShortcut" type="button"><span>大切にしたい再訪問</span><strong><span id="homeRevisitCount">0</span><small> か所</small></strong><small>全区域から見る →</small></button>
+</div>
+<p class="home-encouragement">一人一人を大切に、自分のペースで。</p>
+<div class="home-tabs" role="group" aria-label="個人記録の表示">
+<button type="button" data-home-panel="maps" aria-pressed="true">使った地図 <span id="homeMapCount">0</span></button>
+<button type="button" data-home-panel="revisits" aria-pressed="false">再訪問</button>
+<button type="button" data-home-panel="service" aria-pressed="false">奉仕時間</button>
+</div>
+<label id="homeSearchLabel" class="home-search"><span class="visually-hidden">個人記録を検索</span><input id="homeSearch" type="search" placeholder="区域番号・地名で探す" autocomplete="off"></label>
+<section id="homePanel-maps" aria-label="使った地図">
+<p class="home-help">最近開いた順。訪問記録を整理しても、この履歴は残ります。</p><div id="homeMaps"></div>
+</section>
+<section id="homePanel-revisits" aria-label="再訪問" hidden><div id="homeRevisits"></div></section>
+<section id="homePanel-service" aria-label="奉仕時間" hidden>
+<label class="home-month">表示する月 <input id="homeMonth" type="month"></label>
+<p id="homeMonthSummary" class="home-month-summary"></p><div id="homeService"></div>
+</section>
+<details class="records-details home-settings"><summary>バックアップ・データの確認</summary>
+<p class="privacy-note">再訪問・奉仕時間・使った地図は、この端末に保存されます。</p>
+<div id="homeBackupTools"></div><div id="homeSync"></div>
+</details>
+</div>
+</main>
 </div>
 
 <div class="hint" id="hint">地図をタップして家を記録</div>
@@ -130,7 +160,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
-<button id="btnDnc" class="record-action" title="訪問お断りを追加">🚫</button>
+<button id="btnDnc" class="record-action" title="訪問しない・注意事項を追加">🚫</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
@@ -176,14 +206,10 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 <input type="file" id="fileIn" accept="application/json" style="display:none">
 <div class="bulk">
-<div class="bulk-t">この区域の戸建てピンを整理</div>
-<p class="records-footnote">端末内の戸建てピンだけが対象です。建物・部屋の記録と共有情報は削除されません。</p>
-<div class="bulk-btns">
-<button data-s="met" style="background:#f5b400">会えたを全部消す</button>
-<button data-s="revisit" style="background:#1f6feb">再訪問を全部消す</button>
-<button data-s="posted" style="background:#2ea043">投函を全部消す</button>
-<button data-s="away" style="background:#9E9E9E">留守を全部消す</button>
-</div>
+<div class="bulk-t">区域の使用が終わったら</div>
+<p class="records-footnote">戸建てと部屋の「会えた・投函・留守」を整理します。再訪問・訪問しない・奉仕時間・使った地図は残ります。</p>
+<button id="cleanupRecords" type="button">この区域の記録を整理</button>
+<p id="cleanupStatus" class="records-footnote" role="status"></p>
 </div>
 </details>
 </div>
@@ -237,12 +263,14 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20260916-3"></script>
-<script src="records.js?v=20260916-records1"></script>
+<script src="app-core.js?v=20260917-home1"></script>
+<script src="records.js?v=20260917-home1"></script>
+<script src="personal.js?v=20260917-home1"></script>
 <script src="status.js?v=20260915-2"></script>
 <script>
-const TPARAM = (new URLSearchParams(location.search).get('t')||'1');
+const TPARAM = (new URLSearchParams(location.search).get('t')||'home');
 const ISALL = (TPARAM === 'all');
+const ISHOME = (TPARAM === 'home');
 
 const STATUSES = {
 met:{label:"会えた", color:"#f5b400"},
@@ -255,7 +283,7 @@ const ORDER = ["met","revisit","posted","dnc","away"];
 
 
 // ====== 全体図（?t=all）／各区域画面の振り分け ======
-if(ISALL){ buildOverview(); } else { buildTerritory(); }
+if(ISHOME){ Personal.mount(); } else if(ISALL){ buildOverview(); } else { buildTerritory(); }
 
 // ====== 全体図ビュー ======
 function buildOverview(){
@@ -366,7 +394,7 @@ const layer = L.layerGroup().addTo(map);
 Records.register('houses',()=>houses.map((h,i)=>({...h,kind:'house',title:'家 '+(i+1)})),h=>{
   map.setView([h.lat,h.lng],18);
   const marker=layer.getLayers()[houses.findIndex(x=>x.id===h.id)];if(marker)marker.openPopup();
-});
+},()=>{houses=load();render();showRevisit();if(sheet.style.display==='flex')renderList();});
 function pinIcon(color){
 return L.divIcon({className:"",html:'<div class="house-pin" style="background:'+color+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
 }
@@ -442,16 +470,8 @@ sheet.onclick=function(e){if(e.target===sheet)sheet.style.display='none';};
 function renderList(filter){ Records.render(filter); }
 window.refreshVisitRecords=function(){updateCount();showRevisit();if(sheet.style.display==='flex')renderList();};
 
-// ---- 種類ごとに一括削除 ----
-function clearByStatus(st){
-var n=houses.filter(function(h){return h.status===st;}).length;
-if(n===0){alert(STATUSES[st].label+'のピンはありません');return;}
-if(!confirm(STATUSES[st].label+'のピンを '+n+'件すべて消しますか？（直後に「元に戻す」で取り消せます）')) return;
-houses=houses.filter(function(h){return h.status!==st;}); save(); render(); renderList();
-}
-document.querySelectorAll('.bulk-btns button').forEach(function(b){
-b.onclick=function(){clearByStatus(b.dataset.s);};
-});
+// ---- 使用終了時の整理（再訪問・訪問しない・奉仕時間・使用履歴は保持） ----
+document.getElementById('cleanupRecords').onclick=()=>Personal.requestCleanup(TPARAM);
 
 // ---- バックアップ ----
 document.getElementById('btnExport').onclick=function(){
@@ -608,7 +628,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    if(!a)return;current=a;map.setView([a.lat,a.lng],18);render();sheet.style.display='flex';
    const row=[...document.querySelectorAll('#roomBody .room')].find(el=>el.querySelector('.rno').textContent===r.no);
    if(row){row.classList.add('room-highlight');if(row.scrollIntoView)row.scrollIntoView({block:'center'});}
- });
+ },()=>{local=JSON.parse(localStorage.getItem(key))||[];records=JSON.parse(localStorage.getItem(recordsKey))||{};current=null;sheet.style.display='none';renderPins();if(window.refreshVisitRecords)window.refreshVisitRecords();});
  if(window.refreshVisitRecords)window.refreshVisitRecords();
  function render(){
    const a=current;if(!a)return;
@@ -646,17 +666,11 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  document.getElementById('btnAddApt').onclick=()=>{};
  map.on('click',e=>{if(App.mode!=='btnAddApt')return;const a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]};local.push(a);save();current=a;renderPins();render();sheet.style.display='flex';});
  renderPins();
- const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=2125994133&single=true&output=csv';
- App.feed('apartments','共有の建物・部屋番号',url,rows=>{
-   if(!rows.length || rows[0].slice(0,6).join(',')!=='区域番号,建物ID,緯度,経度,建物名,部屋番号')throw Error('共有建物の見出しが不正です');
-   const seen=new Set(), result=[];
-   rows.slice(1).forEach(c=>{
-     if(c.length!==6 || !/^\d+$/.test(c[0].trim()) || !/^[a-zA-Z0-9_-]+$/.test(c[1]) || ['__proto__','constructor','prototype'].includes(c[1]) || !c[2].trim() || !c[3].trim() || !App.coordinate(Number(c[2]),Number(c[3])))throw Error('建物情報の形式が不正です');
-     const identity=c[0].trim()+':'+c[1];if(seen.has(identity))throw Error('建物IDが重複しています');seen.add(identity);
-     if(c[0].trim()!==String(TPARAM))return;
-     result.push({shared:true,id:c[1],lat:Number(c[2]),lng:Number(c[3]),name:c[4],rooms:[...new Set(c[5].split(/[,、\s]+/).filter(Boolean))].map(no=>({no,status:'',date:''}))});
-   });return result;
- },data=>{const old=current;shared=data;renderPins();if(old && old.shared){current=shared.find(a=>a.id===old.id);if(current)render();else sheet.style.display='none';}if(window.refreshVisitRecords)window.refreshVisitRecords();});
+ App.feed('apartments','共有の建物・部屋番号',Records.sharedURL,rows=>Records.decodeBuildings(rows).filter(a=>a.terr===TPARAM),data=>{
+   const old=current;shared=data;renderPins();
+   if(old){const published=shared.find(a=>a.id===(old.shared?old.id:'local-'+old.id));if(published){current=published;render();}else if(old.shared){current=null;sheet.style.display='none';}}
+   if(window.refreshVisitRecords)window.refreshVisitRecords();Records.openLinked();
+ });
 })();
 
 ;(function dnc(){
@@ -685,6 +699,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  });
 })();
 
+if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
 </body>
 </html>

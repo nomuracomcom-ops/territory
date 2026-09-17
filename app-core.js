@@ -1,7 +1,7 @@
 /* Shared utilities. Existing localStorage keys remain compatible. */
 window.App = (() => {
   const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const recordKey = k => /^terr-\d+(?:-apt|-shared-records)?$/.test(k) || ['svc-log','svc-active'].includes(k);
+  const recordKey = k => /^terr-\d+(?:-apt|-shared-records)?$/.test(k) || ['svc-log','svc-active','map-history'].includes(k);
   const statuses = ['', 'met', 'revisit', 'posted', 'dnc', 'away'];
   const coordinate = (lat,lng) => typeof lat==='number' && typeof lng==='number' && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat)<=90 && Math.abs(lng)<=180;
   function check(ok){ if(!ok) throw Error('記録ファイルの形式が正しくありません。'); }
@@ -10,7 +10,8 @@ window.App = (() => {
   function validateApartments(rows){ check(Array.isArray(rows)); const seen=new Set(); rows.forEach(a=>{check(a && coordinate(a.lat,a.lng) && Number.isFinite(a.id) && !seen.has(a.id) && typeof a.name==='string');seen.add(a.id);validateRooms(a.rooms);}); }
   function validateEntry(k,raw){
     check(recordKey(k) && typeof raw==='string'); const v=JSON.parse(raw);
-    if(k==='svc-log'){ check(Array.isArray(v)); v.forEach(x=>check(x && Number.isFinite(x.id) && Number.isFinite(x.start) && Number.isFinite(x.end) && x.end>=x.start && Number.isFinite(x.min) && x.min>=0 && typeof x.date==='string' && (!x.terr || /^\d+$/.test(x.terr)))); }
+    if(k==='map-history'){check(Array.isArray(v));const seen=new Set();v.forEach(x=>{check(x && typeof x.terr==='string' && /^\d+$/.test(x.terr) && !seen.has(x.terr) && typeof x.name==='string' && (x.lastOpened===null || (Number.isFinite(x.lastOpened) && x.lastOpened>=0 && Number.isFinite(new Date(x.lastOpened).getTime()))));seen.add(x.terr);});}
+    else if(k==='svc-log'){ check(Array.isArray(v)); v.forEach(x=>check(x && Number.isFinite(x.id) && Number.isFinite(x.start) && Number.isFinite(x.end) && x.end>=x.start && Number.isFinite(x.min) && x.min>=0 && typeof x.date==='string' && (!x.terr || /^\d+$/.test(x.terr)))); }
     else if(k==='svc-active'){ check(v===null || (Number.isFinite(v.start) && /^\d+$/.test(v.terr))); }
     else if(k.endsWith('-shared-records')){ check(v && typeof v==='object' && !Array.isArray(v)); Object.entries(v).forEach(([id,rooms])=>{check(!['__proto__','constructor','prototype'].includes(id));validateRooms(rooms);}); }
     else if(k.endsWith('-apt')) validateApartments(v); else validateHouses(v);
@@ -53,17 +54,31 @@ window.App = (() => {
   }
   let undo=null, undoTimer=null;
   function notice(message){const n=document.getElementById('recordNotice');if(n){n.textContent=message;n.hidden=false;}}
+  function showUndo(){const button=document.getElementById('undoBtn'),control=button&&button.closest('.undo-control');if(control){control.hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(()=>{control.hidden=true;undo=null;},15000);}}
   function store(k,v){
     let old;
     try{old=localStorage.getItem(k);localStorage.setItem(k,v);}
     catch(e){notice('保存できませんでした。端末の空き容量を確認し、再度操作してください。');throw e;}
-    if(recordKey(k) && k!=='svc-active' && k!=='svc-log' && old!==v){
+    if(recordKey(k) && !['svc-active','svc-log','map-history'].includes(k) && old!==v){
       // Group successive typing into a single undo, but keep distinct clicks separate.
       const typing=document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-      if(!(typing && undo && undo.key===k && undo.typing && Date.now()-undo.time<1500))undo={key:k,old,typing,time:Date.now()};
+      if(!(typing && undo && undo.key===k && undo.typing && Date.now()-undo.time<1500))undo={key:k,before:{[k]:old},typing,time:Date.now()};
       else undo.time=Date.now();
-      const button=document.getElementById('undoBtn'),control=button&&button.closest('.undo-control');if(control){control.hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(()=>{control.hidden=true;undo=null;},15000);}
+      showUndo();
     }
+  }
+  // One cleanup spans houses and both kinds of room storage. Restore all keys on failure.
+  function writeBatch(records){
+    const before=Object.fromEntries(Object.keys(records).map(k=>[k,localStorage.getItem(k)])),written=[];
+    try{for(const [k,v] of Object.entries(records)){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);written.push(k);}}
+    catch(e){for(const k of written.reverse()){if(before[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,before[k]);}throw e;}
+    return before;
+  }
+  function storeBatch(records,expected){
+    Object.entries(records).forEach(([k,v])=>validateEntry(k,v));
+    if(expected && Object.entries(expected).some(([k,v])=>localStorage.getItem(k)!==v))throw Error('記録が更新されています。件数を確認し直してください。');
+    try{const before=writeBatch(records);if(Object.keys(before).length){undo={before,typing:false,time:Date.now()};showUndo();}}
+    catch(e){notice('保存できませんでした。整理前の記録を保持しています。');throw e;}
   }
   function remove(k){try{localStorage.removeItem(k);}catch(e){notice('記録を保存できませんでした。再度操作してください。');throw e;}}
   function download(name,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
@@ -79,12 +94,12 @@ window.App = (() => {
     catch(e){const sheet=document.getElementById('copySheet');document.getElementById('copyText').value=text;sheet.hidden=false;document.getElementById('copyText').select();return false;}
   }
   function tsvCell(value){const s=String(value).replace(/[\t\r\n]+/g,' ');if(/^[=+@-]/.test(s))return "'"+s;return s;}
-  const api={escape,coordinate,parseCSV,feed,feedStatus,store,remove,backup,restore,validateBackup,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
+  const api={escape,coordinate,parseCSV,feed,feedStatus,store,storeBatch,notice,remove,backup,restore,validateBackup,validateEntry,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
   document.addEventListener('DOMContentLoaded',()=>{
     document.body.insertAdjacentHTML('beforeend','<div id="recordNotice" role="alert" hidden></div><div id="copySheet" class="copy-sheet" hidden><div><p>自動コピーできませんでした。下の内容を選択してコピーしてください。</p><textarea id="copyText" aria-label="共有用の内容" readonly></textarea><button id="copyClose">閉じる</button></div></div>');
     const zoomTools=document.querySelector('.leaflet-top.leaflet-right');if(zoomTools)zoomTools.insertAdjacentHTML('beforeend','<div class="leaflet-control undo-control" hidden><button id="undoBtn" type="button" title="直前の記録を元に戻す" aria-label="直前の記録を元に戻す">↩</button></div>');
     document.getElementById('copyClose').onclick=()=>document.getElementById('copySheet').hidden=true;
-    const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{if(undo.old===null)localStorage.removeItem(undo.key);else localStorage.setItem(undo.key,undo.old);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
+    const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{writeBatch(undo.before);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
     document.getElementById('syncRetry').onclick=()=>reloaders.forEach(f=>f());
     window.addEventListener('online',()=>reloaders.forEach(f=>f()));
     window.addEventListener('offline',()=>{feedStates.forEach((s,id)=>feedStatus(id,s.label,'通信なし・最新情報は未確認',s.time));});
@@ -97,6 +112,7 @@ window.App = (() => {
     document.getElementById('backupAll').onclick=()=>{try{download('電子区域_全記録_'+new Date().toISOString().slice(0,10)+'.json',backup());document.getElementById('backupStatus').textContent='バックアップを書き出しました。ダウンロード先を確認してください。';}catch(e){notice('バックアップを作成できませんでした。');}};
     document.getElementById('restoreAll').onclick=()=>document.getElementById('backupFile').click();
     document.getElementById('backupFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());const records=validateBackup(data);if(!Object.keys(records).length)throw Error('記録がありません');if(!confirm('ファイルに含まれる区域・奉仕記録を置き換えます。現在の記録は先にバックアップしてください。復元しますか？'))return;restore(data);location.reload();}catch(err){alert('復元できませんでした。ファイル形式と端末の空き容量を確認してください。');}finally{e.target.value='';}};
+    if(window.Personal)Personal.start();
   });
   return api;
 })();

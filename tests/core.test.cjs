@@ -47,3 +47,11 @@ test('shared empty header-only feed is a valid successful empty list',async()=>{
 });
 test('shared exports flatten tabs and neutralize spreadsheet formulas',()=>{const {app}=setup();assert.equal(app.tsvCell('a\tb\nc'),'a b c');assert.equal(app.tsvCell('=HYPERLINK("x")'),'\'=HYPERLINK("x")');assert.equal(app.escape('</textarea><img>'),'&lt;/textarea&gt;&lt;img&gt;');});
 test('all inline scripts compile',()=>{const html=fs.readFileSync(path.join(root,'index.html'),'utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);});
+
+test('map history is included in backups and invalid or duplicate history is rejected before restore',()=>{
+ const {app,localStorage,data}=setup(),history=[{terr:'4',name:'区域4',lastOpened:1789660000000},{terr:'1',name:'区域1',lastOpened:null}];
+ localStorage.setItem('map-history',JSON.stringify(history));const backup=app.backup();data.clear();app.restore(backup);assert.deepEqual(JSON.parse(localStorage.getItem('map-history')),history);
+ for(const value of [[history[0],history[0]],[{...history[0],terr:'all'}],[{...history[0],lastOpened:'today'}]]){
+   assert.throws(()=>app.restore({format:'territory-backup',version:1,records:{'terr-4':'[]','map-history':JSON.stringify(value)}}));assert.equal(localStorage.getItem('terr-4'),null);assert.equal(localStorage.getItem('map-history'),JSON.stringify(history));
+ }
+});
