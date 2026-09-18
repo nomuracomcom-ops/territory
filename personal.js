@@ -105,7 +105,7 @@ window.Personal = (() => {
     document.getElementById('homeMapEdit').hidden=!history.length;
     document.getElementById('homeMapEdit').textContent=editingMaps?'編集を終了':'履歴を編集';
     document.getElementById('homeMapClear').hidden=!editingMaps || !history.length;
-    if(!list.length){empty(host,history.length?'該当する地図はありません。':'まだ使用履歴はありません。「区域を探す」から地図を開くと、ここに残ります。');return;}
+    if(!list.length){empty(host,history.length?'該当する地図はありません。':'まだ使用履歴はありません。「区域地図」から地図を開くと、ここに残ります。');return;}
     for(const entry of list){
       const available=known(entry.terr),row=el('div','home-map-row'),link=el(available?'a':'div','home-map');if(available)link.href=mapLink(entry.terr);
       link.appendChild(el('span','home-map-number',entry.terr));

@@ -81,7 +81,7 @@ test('private content is rendered as text, not HTML',async()=>{
 test('home is the default entry and empty home, overview and unknown areas do not create usage',async()=>{
  for(const t of [null,'home','all','999']){
    const a=app(t);await a.flush();assert.equal(a.data.has('map-history'),false);
-   if(t===null || t==='home'){assert.equal(a.maps.length,0);assert.equal(a.document.getElementById('personalHome').hidden,false);assert.match(a.document.getElementById('homeMaps').textContent,/まだ使用履歴/);}
+   if(t===null || t==='home'){assert.equal(a.maps.length,0);assert.equal(a.document.getElementById('personalHome').hidden,false);assert.match(a.document.getElementById('homeMaps').textContent,/「区域地図」から/);}
  }
 });
 
