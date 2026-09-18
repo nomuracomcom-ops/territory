@@ -85,6 +85,11 @@ test('home is the default entry and empty home, overview and unknown areas do no
  }
 });
 
+test('home uses the compact ministry heading and territory map label',async()=>{
+ const a=app('home');await a.flush();assert.equal(a.document.querySelector('.home-intro h1').textContent,'伝道を楽しもう');
+ assert.equal(a.document.querySelector('.home-browse').textContent,'区域地図');assert.equal(a.document.querySelector('.home-intro p'),null);assert.equal(a.document.querySelector('.home-encouragement'),null);
+});
+
 test('opening a map persists one entry, sorts most recently opened first, and keeps QR destinations',async()=>{
  const a=app('4');await a.flush();const initial=JSON.parse(a.data.get('map-history'));
  assert.equal(initial.length,1);assert.equal(initial[0].terr,'4');assert.ok(initial[0].lastOpened>0);assert.equal(a.document.getElementById('personalHome').hidden,true);
