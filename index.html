@@ -261,14 +261,15 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="territories.js?v=20261001-boundaries1"></script>
+<script src="territories.js?v=20261001-identity1"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20260930-mihata1"></script>
-<script src="records.js?v=20260930-mihata1"></script>
-<script src="personal.js?v=20260930-mihata1"></script>
-<script src="status.js?v=20260930-mihata1"></script>
+<script src="app-core.js?v=20261001-identity1"></script>
+<script src="records.js?v=20261001-identity1"></script>
+<script src="personal.js?v=20261001-identity1"></script>
+<script src="status.js?v=20261001-identity1"></script>
 <script>
-const TPARAM = (new URLSearchParams(location.search).get('t')||'home');
+const TERR_REF = (new URLSearchParams(location.search).get('t')||'home');
+const TPARAM = Territory.resolve(TERR_REF)||TERR_REF;
 const ISALL = (TPARAM === 'all');
 const ISHOME = (TPARAM === 'home');
 
@@ -315,16 +316,16 @@ function buildOverview(){
   // 各区域の境界＋丸数字ラベル
   const T = window.TERRITORIES || {};
   Object.keys(T).forEach(function(num){
-    const t = T[num];
+    const t = T[num],display=Territory.number(num),wide=display.length>3;
     if(!t.boundary || !t.boundary.length) return;
     const p = L.polygon(t.boundary,{color:"#d9333f",weight:2.5,fillColor:"#d9333f",fillOpacity:.28}).addTo(map);
-    p.on('click',function(){ location.search = '?t='+num; });
+    p.on('click',function(){ location.search = Territory.url(num); });
     // 重心（単純平均）にラベル
     let la=0, lo=0;
     t.boundary.forEach(function(c){ la+=c[0]; lo+=c[1]; });
     la/=t.boundary.length; lo/=t.boundary.length;
-    const label = L.marker([la,lo],{icon:L.divIcon({className:"",html:'<div class="terr-label'+(num.includes('-')?' terr-label-wide':'')+'">'+num+'</div>',iconSize:[num.includes('-')?68:30,30],iconAnchor:[num.includes('-')?34:15,15]})}).addTo(map);
-    label.on('click',function(){ location.search = '?t='+num; });
+    const label = L.marker([la,lo],{icon:L.divIcon({className:"",html:'<div class="terr-label'+(wide?' terr-label-wide':'')+'">'+App.escape(display)+'</div>',iconSize:[wide?68:30,30],iconAnchor:[wide?34:15,15]})}).addTo(map);
+    label.on('click',function(){ location.search = Territory.url(num); });
     bounds = bounds ? bounds.extend(p.getBounds()) : p.getBounds();
   });
   if(bounds) map.fitBounds(bounds,{padding:[30,30]});
@@ -340,21 +341,21 @@ function buildOverview(){
   window.refreshOverviewStatus = function(){ if(ovSheet.style.display==='flex') renderOv(); };
   function renderOv(){
     const TT=window.TERRITORIES||{}, SS=window.TERR_STATUS||{};
-    const nums=Object.keys(TT).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});});
+    const nums=Object.keys(TT).sort(function(a,b){return Territory.number(a).localeCompare(Territory.number(b),undefined,{numeric:true});});
     let free=0;
     const rows=nums.map(function(n){
       const st=SS[n]||''; let cls='na', lab='状況未確認';
       if(st==='空き'){ cls='free'; lab='空き'; free++; }
       else if(st==='貸出中'){ cls='used'; lab='貸出中'; }
       else if(st){ cls='used'; lab=st; }
-      return '<div class="ov-item" data-n="'+n+'"><div class="num">'+n+'</div>'+
+      return '<div class="ov-item" data-n="'+n+'"><div class="num">'+App.escape(Territory.number(n))+'</div>'+
         '<div class="nm">'+App.escape(TT[n].name||('区域'+n))+'</div>'+
         '<span class="ov-badge '+cls+'">'+App.escape(lab)+'</span></div>';
     }).join('');
     document.getElementById('ovSum').innerHTML='全 '+nums.length+' 区域 ・ 空き <b>'+free+'</b>';
     document.getElementById('ovBody').innerHTML=rows||'<div class="empty">区域がありません。</div>';
     document.getElementById('ovBody').querySelectorAll('.ov-item').forEach(function(r){
-      r.onclick=function(){ location.search='?t='+r.dataset.n; };
+      r.onclick=function(){ location.search=Territory.url(r.dataset.n); };
     });
   }
 }
@@ -364,8 +365,8 @@ function buildTerritory(){
 if(!window.TERRITORIES || !window.TERRITORIES[TPARAM]){ document.getElementById('map').textContent='この区域は登録されていません。区域一覧に戻ってください。'; document.querySelector('.toolbar').style.display='none'; document.getElementById('btnSvc').style.display='none'; const back=document.createElement('a'); back.href='?t=all'; back.textContent='区域一覧へ'; document.getElementById('map').appendChild(back); return; }
 const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
 const TERR_ID = "terr-"+TPARAM;
-document.title = "区域"+TPARAM+" "+TDATA.name;
-document.querySelector('header .no').textContent = "区域 "+TPARAM+(TDATA.temporaryNumber?'（仮）':'');
+document.title = "区域"+Territory.number(TPARAM)+" "+TDATA.name;
+document.querySelector('header .no').textContent = "区域 "+Territory.number(TPARAM)+(Territory.temporary(TPARAM)?'（仮）':'');
 document.querySelector('header .name').textContent = TDATA.name;
 
 // 区域境界（territories.js から取得）
@@ -477,7 +478,7 @@ document.getElementById('cleanupRecords').onclick=()=>Personal.requestCleanup(TP
 document.getElementById('btnExport').onclick=function(){
 const blob=new Blob([JSON.stringify(houses,null,2)],{type:'application/json'});
 const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-a.download='区域'+TPARAM+'_記録_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+a.download='区域'+Territory.number(TPARAM)+'_記録_'+new Date().toISOString().slice(0,10)+'.json';a.click();
 };
 document.getElementById('btnImport').onclick=function(){document.getElementById('fileIn').click();};
 document.getElementById('fileIn').onchange=function(e){
@@ -512,7 +513,7 @@ function showDone(svcMin){
 const summary=Records.summarize(Records.entries());
 let _s='今回の奉仕 '+fmtDur(svcMin||0)+'。';
 if(summary.total){
-  _s+='\n区域'+TPARAM+'・今日の記録 '+summary.total+'か所\n'+['met','revisit','posted','away'].filter(s=>summary.counts[s]).map(s=>STATUSES[s].label+' '+summary.counts[s]).join(' ／ ');
+  _s+='\n区域'+Territory.number(TPARAM)+'・今日の記録 '+summary.total+'か所\n'+['met','revisit','posted','away'].filter(s=>summary.counts[s]).map(s=>STATUSES[s].label+' '+summary.counts[s]).join(' ／ ');
 }else{_s+='\n今日もお疲れさまでした。';}
 document.getElementById('doneSummary').textContent = _s;
 let idx=parseInt(localStorage.getItem('praiseIdx')||'0',10);
@@ -585,7 +586,7 @@ function renderSvc(){
   if(!log.length){ b.innerHTML='<div class="empty">まだ奉仕記録がありません。「▶ 伝道スタート」を押すと記録が始まります。</div>'; return; }
   b.innerHTML=log.map(function(x){
     return '<div class="svc-item"><div><div class="d">'+fmtDate(x.start)+'　'+fmtTime(x.start)+'〜'+fmtTime(x.end)+'</div>'+
-      '<div class="sub">'+fmtDur(x.min)+(x.terr?' ・ 区域'+x.terr:'')+'</div></div>'+
+      '<div class="sub">'+fmtDur(x.min)+(x.terr?' ・ 区域'+Territory.number(x.terr):'')+'</div></div>'+
       '<button class="svc-del" data-id="'+x.id+'">×</button></div>';
   }).join('');
   b.querySelectorAll('.svc-del').forEach(function(btn){
@@ -659,10 +660,10 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  document.getElementById('roomAddBtn').onclick=add;
  document.getElementById('roomAddInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add();}};
  document.getElementById('aptDel').onclick=()=>{if(!current || current.shared || !confirm('この建物と部屋の記録を削除しますか？'))return;local=local.filter(a=>a.id!==current.id);save();renderPins();sheet.style.display='none';};
- document.getElementById('aptExport').onclick=()=>App.download('区域'+TPARAM+'_アパマン_'+new Date().toISOString().slice(0,10)+'.json',local);
+ document.getElementById('aptExport').onclick=()=>App.download('区域'+Territory.number(TPARAM)+'_アパマン_'+new Date().toISOString().slice(0,10)+'.json',local);
  document.getElementById('aptImport').onclick=()=>document.getElementById('aptFileIn').click();
  document.getElementById('aptFileIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());App.validateApartments(d);if(!confirm('この区域の端末内の建物記録を置き換えますか？'))return;App.store(key,JSON.stringify(d));local=d;current=null;sheet.style.display='none';renderPins();}catch(err){alert('読み込めませんでした。ファイル形式を確認してください。');}finally{e.target.value='';}};
- document.getElementById('aptShare').onclick=()=>{const a=current;if(!a)return;const id=a.shared?a.id:'local-'+a.id;const row=[TPARAM,id,a.lat,a.lng,a.name,a.rooms.map(r=>r.no).join(',')].map(App.tsvCell).join('\t');App.copy(row);};
+ document.getElementById('aptShare').onclick=()=>{const a=current;if(!a)return;const id=a.shared?a.id:'local-'+a.id;const row=[Territory.id(TPARAM),id,a.lat,a.lng,a.name,a.rooms.map(r=>r.no).join(',')].map(App.tsvCell).join('\t');App.copy(row);};
  document.getElementById('btnAddApt').onclick=()=>{};
  map.on('click',e=>{if(App.mode!=='btnAddApt')return;const a={id:Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,name:'',rooms:[]};local.push(a);save();current=a;renderPins();render();sheet.style.display='flex';});
  renderPins();
@@ -680,9 +681,9 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=0&single=true&output=csv';
  App.feed('dnc','訪問お断り・注意事項',url,rows=>{
    if(!rows.length || !['t','区域番号'].includes(rows[0][0].trim()) || rows[0].length!==5)throw Error('見出しが不正です');
-   return rows.slice(1).map(c=>{if(c.length!==5 || !/^\d+(?:-\d+){0,2}$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return c;});
+   return rows.slice(1).map(c=>{if(c.length!==5 || !/^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return [Territory.shared(c[0].trim())||c[0].trim(),...c.slice(1)];});
  },rows=>{
-   layer.clearLayers();rows.filter(c=>c[0].trim()===String(TPARAM)).forEach(c=>{
+   layer.clearLayers();rows.filter(c=>c[0]===String(TPARAM)).forEach(c=>{
      const marker=L.marker([Number(c[1]),Number(c[2])],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(layer);
      marker.bindPopup('<b>'+App.escape(kinds[c[3].trim()])+'</b><p>'+App.escape(c[4])+'</p><small>全員に共有されている注意事項</small>');
    });
@@ -695,7 +696,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    const address=prompt('住所を入力してください','');if(address===null)return;
    if(!address.trim()){alert('住所を入力してください。');return;}
    const d=new Date(), requestedAt=d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
-   await App.copy([TPARAM,e.latlng.lat.toFixed(6),e.latlng.lng.toFixed(6),kind,requestedAt+' '+address.trim()].map(App.tsvCell).join('\t'));
+   await App.copy([Territory.id(TPARAM),e.latlng.lat.toFixed(6),e.latlng.lng.toFixed(6),kind,requestedAt+' '+address.trim()].map(App.tsvCell).join('\t'));
  });
 })();
 

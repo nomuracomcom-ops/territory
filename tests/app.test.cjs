@@ -1,5 +1,29 @@
 const test=require('node:test');const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');const path=require('node:path');
 const {parseHTML}=require('linkedom');const root=path.join(__dirname,'..');
+test('assigning a final number keeps fixed-ID and old QR destinations, records and history',async()=>{
+ const key='terr-2-23-1',saved={[key]:JSON.stringify([{id:71,lat:34.664,lng:136.135,status:'revisit',memo:'継続',date:'2026-10-01'}]),[key+'-shared-records']:JSON.stringify({'b1':[{no:'101',status:'revisit',date:'2026-10-01'}]}),'svc-active':JSON.stringify({start:Date.now(),terr:'2-23-1'}),'map-history':JSON.stringify([{terr:'2-23-1',name:'美旗町中1番',lastOpened:1}])};
+ const number=c=>{c.TERRITORIES['2-23-1'].number='161';};
+ const csv='区域番号,建物ID,緯度,経度,建物名,部屋番号\nT0005,b1,34.664,136.135,共有棟,101';
+ for(const ref of ['2-23-1','T0005','161']){
+  const a=app(ref,csv,saved,'',number);await a.flush();assert.equal(a.maps.length,1);assert.match(a.document.querySelector('header .no').textContent,/区域 161/);assert.doesNotMatch(a.document.querySelector('header .no').textContent,/仮/);assert.equal(a.data.get(key),saved[key]);assert.equal(a.data.get(key+'-shared-records'),saved[key+'-shared-records']);assert.equal(a.data.has('terr-161'),false);assert.equal(a.data.has('terr-T0005'),false);assert.equal(JSON.parse(a.data.get('map-history')).length,1);
+  a.click('btnList');assert.match(a.document.getElementById('recordsScope').textContent,/区域 161/);assert.equal(a.context.Records.entries().filter(x=>x.status==='revisit').length,2);
+  assert.equal(a.context.Records.decodeBuildings([['区域番号','建物ID','緯度','経度','建物名','部屋番号'],['161','b1','34.664','136.135','共有棟','101']])[0].terr,'2-23-1');
+ }
+ const h=app('home',csv,saved,'',number);await h.flush();assert.match(h.document.getElementById('homeMaps').textContent,/161/);assert.equal(h.document.querySelector('.home-map').getAttribute('href'),'?t=T0005');assert.match(h.document.getElementById('homeActive').textContent,/区域 161/);assert.equal(h.document.getElementById('homeActive').getAttribute('href'),'?t=T0005');h.input('homeSearch','161');assert.equal(h.document.querySelectorAll('.home-map').length,1);
+ const activeBefore=h.data.get('svc-active');h.context.Personal.removeMaps(['2-23-1']);assert.equal(h.data.get(key),saved[key]);assert.equal(h.data.get('svc-active'),activeBefore);assert.equal(JSON.parse(h.data.get('map-history-hidden'))[0],'2-23-1');
+});
+test('later renumbering preserves historical aliases and newly added fixed-ID storage',async()=>{
+ const configure=c=>{c.TERRITORIES['2-23-1'].number='201';c.TERRITORIES['2-23-1'].aliases=['161'];c.TERRITORIES.T0007={id:'T0007',number:null,provisionalNumber:'仮A',aliases:[],name:'新規区域',boundary:c.TERRITORIES['2-23-1'].boundary};};
+ const a=app('161',undefined,{},'',configure);await a.flush();assert.match(a.document.querySelector('header .no').textContent,/201/);assert.equal(a.context.Territory.url('161'),'?t=T0005');
+ const saved={'terr-T0007':JSON.stringify([{id:1,lat:34.664,lng:136.135,status:'away',memo:'',date:'2026-10-01'}])};
+ const b=app('T0007',undefined,saved,'',configure);await b.flush();assert.match(b.document.querySelector('header .no').textContent,/仮A/);assert.equal(b.context.Personal.cleanupPlan('T0007').total,1);const backup=b.context.App.backup();assert.ok(backup.records['terr-T0007']);b.context.App.validateBackup(backup);
+});
+test('reusing an old display number keeps old QR safe and rejects ambiguous shared data',()=>{
+ const a=app('1',undefined,{},'',c=>{c.TERRITORIES['1'].number='11';c.TERRITORIES['2'].number='1';});
+ assert.equal(a.context.Territory.resolve('1'),'1');assert.equal(a.context.Territory.resolve('T0002'),'2');assert.equal(a.context.Territory.number('T0002'),'1');assert.throws(()=>a.context.Territory.shared('1'));assert.equal(a.context.Territory.shared('T0002'),'2');assert.equal(a.context.Territory.resolve(null),null);
+ const h=['区域番号','建物ID','緯度','経度','建物名','部屋番号'];const row=t=>[t,'b1','34.664','136.135','共有棟','101'];
+ assert.throws(()=>a.context.Records.decodeBuildings([h,row('1')]));assert.throws(()=>a.context.Records.decodeBuildings([h,row('2'),row('T0002')]));
+});
 test('inherited temporary IDs support timer, records, home, cleanup and backup validation',async()=>{
  const id='2-23-1',key='terr-'+id;
  const saved={[key]:JSON.stringify([{id:91,lat:34.6639,lng:136.135,status:'revisit',memo:'確認',date:'2026-09-30'},{id:92,lat:34.6638,lng:136.135,status:'away',memo:'',date:'2026-09-30'}]),[key+'-apt']:JSON.stringify([{id:93,lat:34.6639,lng:136.135,name:'試験',rooms:[{no:'101',status:'revisit',date:'2026-09-30'}]}])};
@@ -15,7 +39,7 @@ test('temporary territory shared edge uses identical vertices and keeps existing
  const a=app('2-23-1'),t=a.context.TERRITORIES;assert.deepEqual(t['2-23-1'].boundary[0],t['2-23-2'].boundary[0]);assert.deepEqual(t['2-23-1'].boundary[3],t['2-23-2'].boundary[4]);assert.equal(t['2-23-1'].temporaryNumber,true);for(const id of ['1','2','3','4'])assert.ok(t[id]);
  const buildings=a.context.Records.decodeBuildings([['区域番号','建物ID','緯度','経度','建物名','部屋番号'],['2-23-1','test','34.664','136.135','試験','101']]);assert.equal(buildings[0].terr,'2-23-1');
 });
-function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部屋番号\n4,building-a,34.647,136.118,テスト建物,"101,102"',saved={},hash=''){
+function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部屋番号\n4,building-a,34.647,136.118,テスト建物,"101,102"',saved={},hash='',configure=null){
  const {document,Event}=parseHTML(fs.readFileSync(path.join(root,'index.html'),'utf8'));const data=new Map(Object.entries(saved)),maps=[],alerts=[];let domReady,failKey=null;
  const localStorage={get length(){return data.size},key:i=>[...data.keys()][i],getItem:k=>data.has(k)?data.get(k):null,setItem:(k,v)=>{if(k===failKey){failKey=null;throw Error('QuotaExceeded');}data.set(k,String(v));},removeItem:k=>data.delete(k)};
  const bounds={extend(){return this}};
@@ -25,7 +49,7 @@ function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部�
  context.fetch=async url=>({ok:true,text:async()=>url.includes('2125994133')?sharedCSV:url.includes('852025746')?'区域番号,状態\n4,使用中':'t,lat,lng,kind,memo\n4,34.647,136.118,dnc,"注意,メモ"'});
  context.window=context;vm.createContext(context);
  const add=document.addEventListener.bind(document);document.addEventListener=(n,f)=>{if(n==='DOMContentLoaded')domReady=f;else add(n,f)};
- for(const script of document.querySelectorAll('script')){const src=script.getAttribute('src');if(src && src.startsWith('https:'))continue;vm.runInContext(src?fs.readFileSync(path.join(root,src.split('?')[0]),'utf8'):script.textContent,context);}
+ for(const script of document.querySelectorAll('script')){const src=script.getAttribute('src');if(src && src.startsWith('https:'))continue;vm.runInContext(src?fs.readFileSync(path.join(root,src.split('?')[0]),'utf8'):script.textContent,context);if(src && src.startsWith('territories.js') && configure)configure(context);}
  domReady();
  return {context,document,maps,data,alerts,failOnce:k=>failKey=k,click:id=>document.getElementById(id).click(),flush:async()=>{await new Promise(r=>setImmediate(r))},input:(id,value)=>{const e=document.getElementById(id);e.value=value;e.dispatchEvent(new Event('input'));}};
 }
@@ -112,8 +136,8 @@ test('opening a map persists one entry, sorts most recently opened first, and ke
  const c=app('4',undefined,Object.fromEntries(b.data));await c.flush();
  assert.equal(JSON.parse(c.data.get('map-history')).length,2);
  const home=app('home',undefined,Object.fromEntries(c.data));await home.flush();
- const maps=[...home.document.querySelectorAll('.home-map')];assert.equal(maps.length,2);assert.equal(maps[0].getAttribute('href'),'?t=4');
- home.input('homeSearch','1番町B');assert.equal(home.document.querySelectorAll('.home-map').length,1);assert.equal(home.document.querySelector('.home-map').getAttribute('href'),'?t=2');
+ const maps=[...home.document.querySelectorAll('.home-map')];assert.equal(maps.length,2);assert.equal(maps[0].getAttribute('href'),'?t=T0004');
+ home.input('homeSearch','1番町B');assert.equal(home.document.querySelectorAll('.home-map').length,1);assert.equal(home.document.querySelector('.home-map').getAttribute('href'),'?t=T0002');
 });
 
 test('used map history can be deleted individually without deleting records and returns only when reopened',async()=>{
@@ -156,10 +180,10 @@ test('legacy records seed history without inventing dates; global revisits merge
  assert.deepEqual(JSON.parse(a.data.get('map-history')).map(x=>[x.terr,x.lastOpened]),[['1',null],['4',null],['2',null]]);
  for(const [key,value] of Object.entries(saved))assert.equal(a.data.get(key),value);
  assert.equal(a.document.getElementById('homeRevisitCount').textContent,'3');assert.equal(a.document.getElementById('homeMinutes').textContent,'1時間0分');
- assert.equal(a.document.getElementById('homeActive').getAttribute('href'),'?t=4');assert.equal(a.document.getElementById('homeActive').hidden,false);
+ assert.equal(a.document.getElementById('homeActive').getAttribute('href'),'?t=T0004');assert.equal(a.document.getElementById('homeActive').hidden,false);
  a.click('homeRevisitShortcut');assert.equal(a.document.getElementById('homePanel-revisits').hidden,false);assert.match(a.document.getElementById('homeRevisits').textContent,/共有名 · 101号室/);
  assert.equal(a.document.querySelector('#homeRevisits img'),null);a.input('homeSearch','次のお話');assert.equal(a.document.querySelectorAll('.home-revisit').length,1);
- const link=a.document.querySelector('.home-revisit').getAttribute('href');assert.equal(link,'?t=1#record=houses&item=9');
+ const link=a.document.querySelector('.home-revisit').getAttribute('href');assert.equal(link,'?t=T0001#record=houses&item=9');
  a.click('homeServiceShortcut');assert.equal(a.document.querySelectorAll('.home-service-row').length,1);
  const exported=a.context.App.backup();a.data.clear();a.context.App.restore(exported);assert.equal(a.data.get('map-history'),exported.records['map-history']);assert.equal(a.data.get('svc-active'),saved['svc-active']);
 });

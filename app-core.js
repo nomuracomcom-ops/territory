@@ -1,7 +1,7 @@
 /* Shared utilities. Existing localStorage keys remain compatible. */
 window.App = (() => {
   const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const recordKey = k => /^terr-\d+(?:-\d+){0,2}(?:-apt|-shared-records)?$/.test(k) || ['svc-log','svc-active','map-history','map-history-hidden'].includes(k);
+  const recordKey = k => /^terr-(?:\d+(?:-\d+){0,2}|T\d{4,})(?:-apt|-shared-records)?$/.test(k) || ['svc-log','svc-active','map-history','map-history-hidden'].includes(k);
   const statuses = ['', 'met', 'revisit', 'posted', 'dnc', 'away'];
   const coordinate = (lat,lng) => typeof lat==='number' && typeof lng==='number' && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat)<=90 && Math.abs(lng)<=180;
   function check(ok){ if(!ok) throw Error('記録ファイルの形式が正しくありません。'); }
@@ -10,10 +10,10 @@ window.App = (() => {
   function validateApartments(rows){ check(Array.isArray(rows)); const seen=new Set(); rows.forEach(a=>{check(a && coordinate(a.lat,a.lng) && Number.isFinite(a.id) && !seen.has(a.id) && typeof a.name==='string');seen.add(a.id);validateRooms(a.rooms);}); }
   function validateEntry(k,raw){
     check(recordKey(k) && typeof raw==='string'); const v=JSON.parse(raw);
-    if(k==='map-history-hidden'){check(Array.isArray(v));const seen=new Set();v.forEach(x=>{check(typeof x==='string' && /^\d+(?:-\d+){0,2}$/.test(x) && !seen.has(x));seen.add(x);});}
-    else if(k==='map-history'){check(Array.isArray(v));const seen=new Set();v.forEach(x=>{check(x && typeof x.terr==='string' && /^\d+(?:-\d+){0,2}$/.test(x.terr) && !seen.has(x.terr) && typeof x.name==='string' && (x.lastOpened===null || (Number.isFinite(x.lastOpened) && x.lastOpened>=0 && Number.isFinite(new Date(x.lastOpened).getTime()))));seen.add(x.terr);});}
-    else if(k==='svc-log'){ check(Array.isArray(v)); v.forEach(x=>check(x && Number.isFinite(x.id) && Number.isFinite(x.start) && Number.isFinite(x.end) && x.end>=x.start && Number.isFinite(x.min) && x.min>=0 && typeof x.date==='string' && (!x.terr || /^\d+(?:-\d+){0,2}$/.test(x.terr)))); }
-    else if(k==='svc-active'){ check(v===null || (Number.isFinite(v.start) && /^\d+(?:-\d+){0,2}$/.test(v.terr))); }
+    if(k==='map-history-hidden'){check(Array.isArray(v));const seen=new Set();v.forEach(x=>{check(typeof x==='string' && /^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(x) && !seen.has(x));seen.add(x);});}
+    else if(k==='map-history'){check(Array.isArray(v));const seen=new Set();v.forEach(x=>{check(x && typeof x.terr==='string' && /^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(x.terr) && !seen.has(x.terr) && typeof x.name==='string' && (x.lastOpened===null || (Number.isFinite(x.lastOpened) && x.lastOpened>=0 && Number.isFinite(new Date(x.lastOpened).getTime()))));seen.add(x.terr);});}
+    else if(k==='svc-log'){ check(Array.isArray(v)); v.forEach(x=>check(x && Number.isFinite(x.id) && Number.isFinite(x.start) && Number.isFinite(x.end) && x.end>=x.start && Number.isFinite(x.min) && x.min>=0 && typeof x.date==='string' && (!x.terr || /^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(x.terr)))); }
+    else if(k==='svc-active'){ check(v===null || (Number.isFinite(v.start) && /^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(v.terr))); }
     else if(k.endsWith('-shared-records')){ check(v && typeof v==='object' && !Array.isArray(v)); Object.entries(v).forEach(([id,rooms])=>{check(!['__proto__','constructor','prototype'].includes(id));validateRooms(rooms);}); }
     else if(k.endsWith('-apt')) validateApartments(v); else validateHouses(v);
   }

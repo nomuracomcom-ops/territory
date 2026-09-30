@@ -1,16 +1,19 @@
 // 区域データ（区域番号 → 名前・境界[lat,lng]）。区域を追加するときはここに足すだけ。
 window.TERRITORIES = {
   "2-23-1": {
+    id: "T0005", number: null, provisionalNumber: "2-23-1", aliases: [],
     name: "美旗町中1番",
     sourceCongregation: "美旗ヶ丘", sourceNumber: "23", split: 1, temporaryNumber: true,
     boundary: [[34.66332407195185,136.13496077319726],[34.66397708655702,136.13404882213217],[34.664872767137965,136.13488567134482],[34.66408298033236,136.13585663100824]]
   },
   "2-23-2": {
+    id: "T0006", number: null, provisionalNumber: "2-23-2", aliases: [],
     name: "美旗町中1番",
     sourceCongregation: "美旗ヶ丘", sourceNumber: "23", split: 2, temporaryNumber: true,
     boundary: [[34.66332407195185,136.13496077319726],[34.6622024433187,136.13646854071706],[34.66357908132623,136.13804567961782],[34.66473909761518,136.13662362098697],[34.66408298033236,136.13585663100824]]
   },
   "1": {
+    id: "T0001", number: "1", provisionalNumber: "1", aliases: [],
     name: "桔梗が丘1番町A",
     boundary: [
       [34.644431652137904, 136.1164212226868],
@@ -20,6 +23,7 @@ window.TERRITORIES = {
     ]
   },
   "2": {
+    id: "T0002", number: "2", provisionalNumber: "2", aliases: [],
     name: "桔梗が丘1番町B",
     boundary: [
       [34.64508922884992, 136.11488699913028],
@@ -34,6 +38,7 @@ window.TERRITORIES = {
     ]
   },
   "3": {
+    id: "T0003", number: "3", provisionalNumber: "3", aliases: [],
     name: "桔梗が丘1番町C",
     boundary: [
       [34.64766983605625, 136.11671894788742],
@@ -47,6 +52,7 @@ window.TERRITORIES = {
     ]
   },
   "4": {
+    id: "T0004", number: "4", provisionalNumber: "4", aliases: [],
     name: "桔梗が丘1番町D",
     boundary: [
       [34.646050208255964, 136.11821025609973],
@@ -62,6 +68,36 @@ window.TERRITORIES = {
     ]
   }
 };
+
+// Keys are immutable storage identities, including legacy keys. Never rename them
+// when assigning a congregation number. New territories use their Txxxx ID as key.
+window.Territory = (() => {
+  const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+  function resolve(ref) {
+    ref=String(ref||'');if(!ref || ref==='home' || ref==='all')return null;
+    const all=window.TERRITORIES||{};
+    if(own(all,ref))return ref; // Existing QR URLs always keep their destination.
+    const entries=Object.entries(all);
+    const ids=entries.filter(([k,t])=>t.id===ref);
+    if(ids.length)return ids.length===1?ids[0][0]:null;
+    const matches=entries.filter(([k,t])=>String(t.number||'')===ref || t.provisionalNumber===ref || (t.aliases||[]).includes(ref));
+    return matches.length===1?matches[0][0]:null;
+  }
+  function get(ref){const k=resolve(ref);return k===null?null:window.TERRITORIES[k];}
+  function number(ref){const t=get(ref);return t?String(t.number||t.provisionalNumber||ref):String(ref);}
+  function id(ref){const t=get(ref);return t?t.id:String(ref);}
+  function url(ref){return '?t='+encodeURIComponent(id(ref));}
+  function temporary(ref){const t=get(ref);return !!(t && !t.number);}
+  function shared(ref) {
+    ref=String(ref||'');if(!ref)return null;
+    const entries=Object.entries(window.TERRITORIES||{});
+    const ids=entries.filter(([k,t])=>t.id===ref);
+    const matches=ids.length?ids:entries.filter(([k,t])=>k===ref || String(t.number||'')===ref || t.provisionalNumber===ref || (t.aliases||[]).includes(ref));
+    if(matches.length>1)throw Error('共有情報の区域番号が重複しています。固定IDを指定してください。');
+    return matches.length?matches[0][0]:null;
+  }
+  return {resolve,get,number,id,url,temporary,shared};
+})();
 
 // 会衆全体の外枠（全体図の文脈表示用）
 window.CONGREGATION = { name:"桔梗が丘会衆 区域全体", boundary:[
