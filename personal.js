@@ -15,7 +15,7 @@ window.Personal = (() => {
   function scan() {
     const areas=new Map();
     for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i),m=/^terr-(\d+)(-apt|-shared-records)?$/.exec(key);
+      const key=localStorage.key(i),m=/^terr-(\d+(?:-\d+){0,2})(-apt|-shared-records)?$/.exec(key);
       if(!m)continue;
       if(!areas.has(m[1]))areas.set(m[1],{houses:[],local:[],saved:{}});
       const type=m[2]==='-apt'?'local':m[2]==='-shared-records'?'saved':'houses';
@@ -26,7 +26,7 @@ window.Personal = (() => {
   function remember(openTerr) {
     // An absent date means evidence of previous use, never an invented opening date.
     const old=read(HISTORY,[]),hidden=new Set(read(HIDDEN,[])),byId=new Map(old.map(x=>[x.terr,{...x}]));
-    const add=t=>{if(/^\d+$/.test(t) && !hidden.has(t) && !byId.has(t))byId.set(t,{terr:t,name:territoryName(t),lastOpened:null});};
+    const add=t=>{if(/^\d+(?:-\d+){0,2}$/.test(t) && !hidden.has(t) && !byId.has(t))byId.set(t,{terr:t,name:territoryName(t),lastOpened:null});};
     for(const [t,a] of scan())if(a.houses.length || a.local.length || Object.values(a.saved).some(r=>r.length))add(t);
     for(const log of safeRead('svc-log',[]))if(log.terr)add(String(log.terr));
     const active=safeRead('svc-active',null);if(active)add(String(active.terr));
@@ -48,7 +48,7 @@ window.Personal = (() => {
     return result;
   }
   function cleanupPlan(terr) {
-    if(!/^\d+$/.test(terr))throw Error('区域を確認してください。');
+    if(!/^\d+(?:-\d+){0,2}$/.test(terr))throw Error('区域を確認してください。');
     const houseKey='terr-'+terr,aptKey=houseKey+'-apt',roomKey=houseKey+'-shared-records';
     const expected=Object.fromEntries([houseKey,aptKey,roomKey].map(k=>[k,localStorage.getItem(k)]));
     const houses=read(houseKey,[]),local=read(aptKey,[]),saved=read(roomKey,{});

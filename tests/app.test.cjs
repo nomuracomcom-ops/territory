@@ -1,5 +1,20 @@
 const test=require('node:test');const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');const path=require('node:path');
 const {parseHTML}=require('linkedom');const root=path.join(__dirname,'..');
+test('inherited temporary IDs support timer, records, home, cleanup and backup validation',async()=>{
+ const id='2-23-1',key='terr-'+id;
+ const saved={[key]:JSON.stringify([{id:91,lat:34.6639,lng:136.135,status:'revisit',memo:'確認',date:'2026-09-30'},{id:92,lat:34.6638,lng:136.135,status:'away',memo:'',date:'2026-09-30'}]),[key+'-apt']:JSON.stringify([{id:93,lat:34.6639,lng:136.135,name:'試験',rooms:[{no:'101',status:'revisit',date:'2026-09-30'}]}])};
+ const a=app(id,undefined,saved);await a.flush();assert.equal(a.maps.length,1);assert.equal(JSON.parse(a.data.get('map-history'))[0].terr,id);
+ a.click('btnSvc');assert.equal(JSON.parse(a.data.get('svc-active')).terr,id);a.click('btnSvc');assert.equal(JSON.parse(a.data.get('svc-log'))[0].terr,id);
+ for(const [k,v] of a.data)if(k.startsWith('terr-')||k.startsWith('map-history')||k.startsWith('svc-'))a.context.App.validateEntry(k,v);
+ const h=app('home',undefined,Object.fromEntries(a.data));await h.flush();assert.equal(h.document.getElementById('homeRevisitCount').textContent,'2');assert.match(h.document.getElementById('homeMaps').textContent,/2-23-1/);
+ const plan=a.context.Personal.cleanupPlan(id);assert.equal(plan.total,1);a.context.Personal.cleanup(plan);assert.equal(JSON.parse(a.data.get(key)).length,1);
+ assert.throws(()=>a.context.App.validateEntry('terr-2--23','[]'));assert.throws(()=>a.context.App.validateEntry('terr-2-23-1-4','[]'));
+ const b=app('2-23-2');await b.flush();assert.equal(b.maps.length,1);assert.equal(JSON.parse(b.data.get('map-history'))[0].terr,'2-23-2');
+});
+test('temporary territory shared edge uses identical vertices and keeps existing territories',()=>{
+ const a=app('2-23-1'),t=a.context.TERRITORIES;assert.deepEqual(t['2-23-1'].boundary[0],t['2-23-2'].boundary[0]);assert.deepEqual(t['2-23-1'].boundary[3],t['2-23-2'].boundary[4]);assert.equal(t['2-23-1'].temporaryNumber,true);for(const id of ['1','2','3','4'])assert.ok(t[id]);
+ const buildings=a.context.Records.decodeBuildings([['区域番号','建物ID','緯度','経度','建物名','部屋番号'],['2-23-1','test','34.664','136.135','試験','101']]);assert.equal(buildings[0].terr,'2-23-1');
+});
 function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部屋番号\n4,building-a,34.647,136.118,テスト建物,"101,102"',saved={},hash=''){
  const {document,Event}=parseHTML(fs.readFileSync(path.join(root,'index.html'),'utf8'));const data=new Map(Object.entries(saved)),maps=[],alerts=[];let domReady,failKey=null;
  const localStorage={get length(){return data.size},key:i=>[...data.keys()][i],getItem:k=>data.has(k)?data.get(k):null,setItem:(k,v)=>{if(k===failKey){failKey=null;throw Error('QuotaExceeded');}data.set(k,String(v));},removeItem:k=>data.delete(k)};

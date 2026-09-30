@@ -73,7 +73,7 @@ window.Records = (() => {
     if(!rows.length || rows[0].slice(0,6).join(',')!=='区域番号,建物ID,緯度,経度,建物名,部屋番号')throw Error('共有建物の見出しが不正です');
     const seen=new Set();
     return rows.slice(1).map(c=>{
-      if(c.length!==6 || !/^\d+$/.test(c[0].trim()) || !/^[a-zA-Z0-9_-]+$/.test(c[1]) || ['__proto__','constructor','prototype'].includes(c[1]) || !c[2].trim() || !c[3].trim() || !App.coordinate(Number(c[2]),Number(c[3])))throw Error('建物情報の形式が不正です');
+      if(c.length!==6 || !/^\d+(?:-\d+){0,2}$/.test(c[0].trim()) || !/^[a-zA-Z0-9_-]+$/.test(c[1]) || ['__proto__','constructor','prototype'].includes(c[1]) || !c[2].trim() || !c[3].trim() || !App.coordinate(Number(c[2]),Number(c[3])))throw Error('建物情報の形式が不正です');
       const identity=c[0].trim()+':'+c[1];if(seen.has(identity))throw Error('建物IDが重複しています');seen.add(identity);
       return {terr:c[0].trim(),shared:true,id:c[1],lat:Number(c[2]),lng:Number(c[3]),name:c[4],rooms:[...new Set(c[5].split(/[,、\s]+/).filter(Boolean))].map(no=>({no,status:'',date:''}))};
     });

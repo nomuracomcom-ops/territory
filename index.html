@@ -108,7 +108,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .dnc-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #b23b3b;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
-<link rel="stylesheet" href="improvements.css?v=20260918-home2">
+<link rel="stylesheet" href="improvements.css?v=20260930-mihata1">
 </head>
 <body>
 <div id="app">
@@ -261,12 +261,12 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="territories.js"></script>
+<script src="territories.js?v=20260930-mihata1"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20260917-history1"></script>
-<script src="records.js?v=20260917-home1"></script>
-<script src="personal.js?v=20260918-homecopy1"></script>
-<script src="status.js?v=20260915-2"></script>
+<script src="app-core.js?v=20260930-mihata1"></script>
+<script src="records.js?v=20260930-mihata1"></script>
+<script src="personal.js?v=20260930-mihata1"></script>
+<script src="status.js?v=20260930-mihata1"></script>
 <script>
 const TPARAM = (new URLSearchParams(location.search).get('t')||'home');
 const ISALL = (TPARAM === 'all');
@@ -323,7 +323,7 @@ function buildOverview(){
     let la=0, lo=0;
     t.boundary.forEach(function(c){ la+=c[0]; lo+=c[1]; });
     la/=t.boundary.length; lo/=t.boundary.length;
-    const label = L.marker([la,lo],{icon:L.divIcon({className:"",html:'<div class="terr-label">'+num+'</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map);
+    const label = L.marker([la,lo],{icon:L.divIcon({className:"",html:'<div class="terr-label'+(num.includes('-')?' terr-label-wide':'')+'">'+num+'</div>',iconSize:[num.includes('-')?68:30,30],iconAnchor:[num.includes('-')?34:15,15]})}).addTo(map);
     label.on('click',function(){ location.search = '?t='+num; });
     bounds = bounds ? bounds.extend(p.getBounds()) : p.getBounds();
   });
@@ -340,7 +340,7 @@ function buildOverview(){
   window.refreshOverviewStatus = function(){ if(ovSheet.style.display==='flex') renderOv(); };
   function renderOv(){
     const TT=window.TERRITORIES||{}, SS=window.TERR_STATUS||{};
-    const nums=Object.keys(TT).sort(function(a,b){return parseInt(a,10)-parseInt(b,10);});
+    const nums=Object.keys(TT).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});});
     let free=0;
     const rows=nums.map(function(n){
       const st=SS[n]||''; let cls='na', lab='状況未確認';
@@ -365,7 +365,7 @@ if(!window.TERRITORIES || !window.TERRITORIES[TPARAM]){ document.getElementById(
 const TDATA = (window.TERRITORIES && window.TERRITORIES[TPARAM]) || (window.TERRITORIES && window.TERRITORIES['1']) || {name:'',boundary:[]};
 const TERR_ID = "terr-"+TPARAM;
 document.title = "区域"+TPARAM+" "+TDATA.name;
-document.querySelector('header .no').textContent = "区域 "+TPARAM;
+document.querySelector('header .no').textContent = "区域 "+TPARAM+(TDATA.temporaryNumber?'（仮）':'');
 document.querySelector('header .name').textContent = TDATA.name;
 
 // 区域境界（territories.js から取得）
@@ -680,7 +680,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=0&single=true&output=csv';
  App.feed('dnc','訪問お断り・注意事項',url,rows=>{
    if(!rows.length || !['t','区域番号'].includes(rows[0][0].trim()) || rows[0].length!==5)throw Error('見出しが不正です');
-   return rows.slice(1).map(c=>{if(c.length!==5 || !/^\d+$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return c;});
+   return rows.slice(1).map(c=>{if(c.length!==5 || !/^\d+(?:-\d+){0,2}$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return c;});
  },rows=>{
    layer.clearLayers();rows.filter(c=>c[0].trim()===String(TPARAM)).forEach(c=>{
      const marker=L.marker([Number(c[1]),Number(c[2])],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(layer);
