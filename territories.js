@@ -2,13 +2,13 @@
 window.TERRITORIES = {
   "2-23-1": {
     id: "T0005", number: null, provisionalNumber: "2-23-1", aliases: [],
-    name: "美旗町中1番",
+    name: "美旗町中1番A",
     sourceCongregation: "美旗ヶ丘", sourceNumber: "23", split: 1, temporaryNumber: true,
     boundary: [[34.66332407195185,136.13496077319726],[34.66397708655702,136.13404882213217],[34.664872767137965,136.13488567134482],[34.66408298033236,136.13585663100824]]
   },
   "2-23-2": {
     id: "T0006", number: null, provisionalNumber: "2-23-2", aliases: [],
-    name: "美旗町中1番",
+    name: "美旗町中1番B",
     sourceCongregation: "美旗ヶ丘", sourceNumber: "23", split: 2, temporaryNumber: true,
     boundary: [[34.66332407195185,136.13496077319726],[34.6622024433187,136.13646854071706],[34.66357908132623,136.13804567961782],[34.66473909761518,136.13662362098697],[34.66408298033236,136.13585663100824]]
   },
