@@ -115,7 +115,7 @@ window.Records = (() => {
     const legacy=document.getElementById('legacyDateNote');legacy.hidden=!summary.undated;
     legacy.textContent='年・日付を確認できない記録が '+summary.undated+' 件あります。「すべて」に残し、今日の件数には含めていません。';
     const next=document.getElementById('recordNext');next.replaceChildren();
-    const heading=document.createElement('p');heading.textContent='次につなげる · この区域の記録';next.appendChild(heading);
+    const heading=document.createElement('p');heading.textContent=(window.Territory?.get(ref)?.name || '区域 '+territory)+'の記録';next.appendChild(heading);
     for (const key of ['revisit','away']) {
       const n=rows.filter(r=>r.status===key).length;
       const b=document.createElement('button');b.type='button';b.className='next-'+key;b.textContent=states[key].label+' '+n+'件を見る →';b.onclick=()=>render(key);next.appendChild(b);

@@ -53,9 +53,9 @@ window.App = (() => {
     }
     reloaders.push(refresh);refresh();
   }
-  let undo=null, undoTimer=null;
+  let undo=null;
   function notice(message){const n=document.getElementById('recordNotice');if(n){n.textContent=message;n.hidden=false;}}
-  function showUndo(){const button=document.getElementById('undoBtn'),control=button&&button.closest('.undo-control');if(control){control.hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(()=>{control.hidden=true;undo=null;},15000);}}
+  function showUndo(){const button=document.getElementById('undoBtn');if(button)button.disabled=!undo;}
   function store(k,v){
     let old;
     try{old=localStorage.getItem(k);localStorage.setItem(k,v);}
@@ -98,7 +98,7 @@ window.App = (() => {
   const api={escape,coordinate,parseCSV,feed,feedStatus,store,storeBatch,notice,remove,backup,restore,validateBackup,validateEntry,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
   document.addEventListener('DOMContentLoaded',()=>{
     document.body.insertAdjacentHTML('beforeend','<div id="recordNotice" role="alert" hidden></div><div id="copySheet" class="copy-sheet" hidden><div><p>自動コピーできませんでした。下の内容を選択してコピーしてください。</p><textarea id="copyText" aria-label="共有用の内容" readonly></textarea><button id="copyClose">閉じる</button></div></div>');
-    const zoomTools=document.querySelector('.leaflet-top.leaflet-right');if(zoomTools)zoomTools.insertAdjacentHTML('beforeend','<div class="leaflet-control undo-control" hidden><button id="undoBtn" type="button" title="直前の記録を元に戻す" aria-label="直前の記録を元に戻す">↩</button></div>');
+    const zoomTools=document.querySelector('.leaflet-top.leaflet-right');if(zoomTools)zoomTools.insertAdjacentHTML('beforeend','<div class="leaflet-control undo-control"><button id="undoBtn" type="button" disabled title="直前の記録を元に戻す" aria-label="直前の記録を元に戻す">↩</button></div>');
     document.getElementById('copyClose').onclick=()=>document.getElementById('copySheet').hidden=true;
     const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{writeBatch(undo.before);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
     document.getElementById('syncRetry').onclick=()=>reloaders.forEach(f=>f());

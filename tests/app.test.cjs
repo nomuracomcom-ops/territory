@@ -72,8 +72,9 @@ test('publishing local building identity retains prior room status without dupli
  const saved={'terr-4-apt':JSON.stringify([{id:123,lat:34.647,lng:136.118,name:'旧名',rooms:[{no:'101',status:'revisit',date:'9/15'}]}])};const a=app('4','区域番号,建物ID,緯度,経度,建物名,部屋番号\n4,local-123,34.647,136.118,共有名,101',saved);await a.flush();const g=a.maps[0].items.find(g=>g.items && g.items.some(m=>m.handlers.click));assert.equal(g.items.length,1);g.items[0].handlers.click();assert.equal(a.document.querySelector('#roomBody button[aria-label="101 再訪問"]').getAttribute('aria-pressed'),'true');
 });
 test('timer start/stop and undo retain prior stored records',async()=>{
- const a=app();await a.flush();a.click('btnSvc');assert.ok(a.data.get('svc-active'));a.click('btnSvc');assert.equal(a.data.has('svc-active'),false);assert.equal(JSON.parse(a.data.get('svc-log')).length,1);
- a.click('btnAddApt');a.maps[0].emit('click',{latlng:{lat:34.648,lng:136.118}});a.click('undoBtn');assert.equal(a.data.has('terr-4-apt'),false);assert.equal(JSON.parse(a.data.get('svc-log')).length,1);assert.equal(a.context.reloaded,true);
+ const a=app();await a.flush();assert.equal(a.document.getElementById('undoBtn').disabled,true);assert.equal(a.document.querySelector('.undo-control').hidden,false);a.click('btnSvc');assert.ok(a.data.get('svc-active'));a.click('btnSvc');assert.equal(a.data.has('svc-active'),false);assert.equal(JSON.parse(a.data.get('svc-log')).length,1);
+ a.click('btnList');assert.match(a.document.getElementById('recordNext').textContent,/桔梗が丘1番町Dの記録/);assert.doesNotMatch(a.document.getElementById('recordNext').textContent,/次につなげる/);
+ a.click('btnAddApt');a.maps[0].emit('click',{latlng:{lat:34.648,lng:136.118}});assert.equal(a.document.getElementById('undoBtn').disabled,false);a.click('undoBtn');assert.equal(a.data.has('terr-4-apt'),false);assert.equal(JSON.parse(a.data.get('svc-log')).length,1);assert.equal(a.context.reloaded,true);
 });
 test('overview exposes shared status, resolves loan labels and unknown territory offers return link',async()=>{
  const a=app('all');await a.flush();a.click('btnOvList');assert.match(a.document.getElementById('ovBody').textContent,/貸出中/);assert.notEqual(a.document.getElementById('notice').style.display,'none');

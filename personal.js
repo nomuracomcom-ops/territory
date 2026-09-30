@@ -75,7 +75,7 @@ window.Personal = (() => {
       const detail='会えた '+plan.counts.met+'件・投函 '+plan.counts.posted+'件・留守 '+plan.counts.away+'件';
       if(!confirm('区域 '+Territory.number(terr)+' の訪問記録を整理しますか？\n'+detail+'\n\n対象の戸建てピンとそのメモを削除し、部屋の状態・日付を消します。\n再訪問・訪問しない・建物と部屋番号・奉仕時間・使った地図は残ります。'))return;
       cleanup(plan);
-      document.getElementById('cleanupStatus').textContent=plan.total+'件を整理しました。直後なら、記録画面を閉じて地図の「↩」で元に戻せます。';
+      document.getElementById('cleanupStatus').textContent=plan.total+'件を整理しました。記録画面を閉じて地図の「↩」で元に戻せます（次の記録変更・再読み込みまで）。';
     }catch(e){alert('整理できませんでした。'+e.message);}
   }
   function el(tag,cls,text) {const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;}
