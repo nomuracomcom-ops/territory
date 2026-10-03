@@ -36,7 +36,8 @@ test('inherited temporary IDs support timer, records, home, cleanup and backup v
  const b=app('2-23-2');await b.flush();assert.equal(b.maps.length,1);assert.equal(JSON.parse(b.data.get('map-history'))[0].terr,'2-23-2');
 });
 test('temporary territory shared edge uses identical vertices and keeps existing territories',()=>{
- const a=app('2-23-1'),t=a.context.TERRITORIES;assert.deepEqual(t['2-23-1'].boundary[0],t['2-23-2'].boundary[0]);assert.deepEqual(t['2-23-1'].boundary[3],t['2-23-2'].boundary[4]);assert.equal(t['2-23-1'].temporaryNumber,true);for(const id of ['1','2','3','4'])assert.ok(t[id]);
+ const a=app('2-23-1'),t=a.context.TERRITORIES;assert.deepEqual(t['2-23-1'].boundary[0],t['2-23-2'].boundary[0]);assert.deepEqual(t['2-23-1'].boundary[3],t['2-23-2'].boundary.at(-1));assert.equal(t['2-23-1'].temporaryNumber,true);for(const id of ['1','2','3','4'])assert.ok(t[id]);
+ assert.deepEqual(t.T0009.boundary[3],t['2-23-2'].boundary[3]);assert.deepEqual(t.T0009.boundary[4],t['2-23-2'].boundary[4]);assert.deepEqual(t.T0009.boundary[5],t['2-23-1'].boundary[3]);assert.deepEqual(t.T0009.boundary[6],t['2-23-1'].boundary[2]);assert.equal(a.context.Territory.resolve('2-33.34.361'),'T0009');
  const buildings=a.context.Records.decodeBuildings([['区域番号','建物ID','緯度','経度','建物名','部屋番号'],['2-23-1','test','34.664','136.135','試験','101']]);assert.equal(buildings[0].terr,'2-23-1');
 });
 function app(t='4',sharedCSV='区域番号,建物ID,緯度,経度,建物名,部屋番号\n4,building-a,34.647,136.118,テスト建物,"101,102"',saved={},hash='',configure=null){
