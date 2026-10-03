@@ -250,3 +250,16 @@ test('a linked local building becomes read-only shared metadata when its publish
  a.document.querySelector('#roomBody button[aria-label="101 会えた"]').click();
  assert.equal(JSON.parse(a.data.get('terr-4-shared-records'))['local-123'][0].status,'met');assert.equal(a.data.get('terr-4-apt'),saved['terr-4-apt']);
 });
+
+
+test('undo never overwrites a newer change from another tab',async()=>{
+ const a=app();await a.flush();a.click('btnAddApt');a.maps[0].emit('click',{latlng:{lat:34.648,lng:136.118}});
+ const key='terr-4-apt',newer=JSON.parse(a.data.get(key));newer[0].name='別タブの更新';const raw=JSON.stringify(newer);a.data.set(key,raw);a.click('undoBtn');
+ assert.equal(a.data.get(key),raw);assert.equal(a.context.reloaded,undefined);assert.equal(a.document.getElementById('undoBtn').disabled,true);assert.match(a.document.getElementById('recordNotice').textContent,/別の画面/);
+});
+test('damaged house data is preserved when adding a pin',async()=>{
+ for(const raw of ['{broken','{}']){const a=app('4',undefined,{'terr-4':raw});await a.flush();assert.ok(a.alerts.some(s=>s.includes('戸建て')));a.click('btnAdd');assert.throws(()=>a.maps[0].emit('click',{latlng:{lat:34.648,lng:136.118}}));assert.equal(a.data.get('terr-4'),raw);}
+});
+test('home offers the supplied congregation site without replacing the app tab',async()=>{
+ const a=app('home');await a.flush();const link=a.document.getElementById('congregationSite');assert.equal(decodeURI(link.getAttribute('href')),'https://sites.google.com/view/kikyogaoka/ホーム');assert.equal(link.getAttribute('target'),'_blank');assert.match(link.getAttribute('rel'),/noopener/);
+});

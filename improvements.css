@@ -152,3 +152,9 @@
 @media(max-width:380px){.home-content{padding-left:12px;padding-right:12px;}.home-summary button{padding:13px;}.home-summary strong{font-size:22px;}.home-map{gap:8px;padding:13px 10px;}.home-browse{padding:9px 10px;font-size:12px;}.home-intro h1{font-size:22px;}.home-map-remove{width:49px;}}
 
 .undo-control button:disabled {color:#9aa3af;cursor:default;background:#f2f4f6;}
+
+.congregation-site{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;box-sizing:border-box;padding:10px 14px;margin:-8px 0 18px;border:1px solid #cadbd2;border-radius:12px;background:#fff;color:#245543;text-decoration:none;font-size:14px;font-weight:600;}
+.congregation-site:focus-visible{outline:3px solid #1f6feb;outline-offset:3px;}
+.home-intro{flex-wrap:wrap;}
+.terr-label.terr-label-wide{width:max-content;min-width:68px;padding:0 6px;box-sizing:border-box;}
+@media(max-width:380px){.home-map-number{max-width:100px;white-space:normal;overflow-wrap:anywhere;font-size:13px;}}

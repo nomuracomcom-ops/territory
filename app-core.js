@@ -58,13 +58,14 @@ window.App = (() => {
   function showUndo(){const button=document.getElementById('undoBtn');if(button)button.disabled=!undo;}
   function store(k,v){
     let old;
-    try{old=localStorage.getItem(k);localStorage.setItem(k,v);}
+    try{old=localStorage.getItem(k);if(recordKey(k)){validateEntry(k,v);if(old!==null)validateEntry(k,old);}localStorage.setItem(k,v);}
     catch(e){notice('保存できませんでした。端末の空き容量を確認し、再度操作してください。');throw e;}
     if(recordKey(k) && !['svc-active','svc-log','map-history','map-history-hidden'].includes(k) && old!==v){
       // Group successive typing into a single undo, but keep distinct clicks separate.
       const typing=document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
       if(!(typing && undo && undo.key===k && undo.typing && Date.now()-undo.time<1500))undo={key:k,before:{[k]:old},typing,time:Date.now()};
       else undo.time=Date.now();
+      undo.after={[k]:v};
       showUndo();
     }
   }
@@ -78,10 +79,17 @@ window.App = (() => {
   function storeBatch(records,expected){
     Object.entries(records).forEach(([k,v])=>validateEntry(k,v));
     if(expected && Object.entries(expected).some(([k,v])=>localStorage.getItem(k)!==v))throw Error('記録が更新されています。件数を確認し直してください。');
-    try{const before=writeBatch(records);if(Object.keys(before).length){undo={before,typing:false,time:Date.now()};showUndo();}}
+    try{const before=writeBatch(records);if(Object.keys(before).length){undo={before,after:{...records},typing:false,time:Date.now()};showUndo();}}
     catch(e){notice('保存できませんでした。整理前の記録を保持しています。');throw e;}
   }
   function remove(k){try{localStorage.removeItem(k);}catch(e){notice('記録を保存できませんでした。再度操作してください。');throw e;}}
+  function finishService(active,log){
+    const raw=JSON.stringify(log);validateEntry('svc-log',raw);
+    const current=localStorage.getItem('svc-active');
+    if(current===null || JSON.stringify(JSON.parse(current))!==JSON.stringify(active))throw Error('奉仕時間が別の画面で更新されています。');
+    const old=localStorage.getItem('svc-log');if(old!==null)validateEntry('svc-log',old);
+    try{writeBatch({'svc-log':raw,'svc-active':null});}catch(e){notice('奉仕時間を保存できませんでした。記録を保持しているので、もう一度終了してください。');throw e;}
+  }
   function download(name,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
   function backup(){const records={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(recordKey(k))records[k]=localStorage.getItem(k);}return {format:'territory-backup',version:1,createdAt:new Date().toISOString(),records};}
   function validateBackup(data){check(data && data.format==='territory-backup' && data.version===1 && data.records && typeof data.records==='object' && !Array.isArray(data.records));Object.entries(data.records).forEach(([k,v])=>validateEntry(k,v));return data.records;}
@@ -95,12 +103,12 @@ window.App = (() => {
     catch(e){const sheet=document.getElementById('copySheet');document.getElementById('copyText').value=text;sheet.hidden=false;document.getElementById('copyText').select();return false;}
   }
   function tsvCell(value){const s=String(value).replace(/[\t\r\n]+/g,' ');if(/^[=+@-]/.test(s))return "'"+s;return s;}
-  const api={escape,coordinate,parseCSV,feed,feedStatus,store,storeBatch,notice,remove,backup,restore,validateBackup,validateEntry,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
+  const api={escape,coordinate,parseCSV,feed,feedStatus,store,storeBatch,notice,remove,finishService,backup,restore,validateBackup,validateEntry,validateHouses,validateApartments,validateRooms,download,copy,tsvCell,mode:null};
   document.addEventListener('DOMContentLoaded',()=>{
     document.body.insertAdjacentHTML('beforeend','<div id="recordNotice" role="alert" hidden></div><div id="copySheet" class="copy-sheet" hidden><div><p>自動コピーできませんでした。下の内容を選択してコピーしてください。</p><textarea id="copyText" aria-label="共有用の内容" readonly></textarea><button id="copyClose">閉じる</button></div></div>');
     const zoomTools=document.querySelector('.leaflet-top.leaflet-right');if(zoomTools)zoomTools.insertAdjacentHTML('beforeend','<div class="leaflet-control undo-control"><button id="undoBtn" type="button" disabled title="直前の記録を元に戻す" aria-label="直前の記録を元に戻す">↩</button></div>');
     document.getElementById('copyClose').onclick=()=>document.getElementById('copySheet').hidden=true;
-    const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{writeBatch(undo.before);location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
+    const undoButton=document.getElementById('undoBtn');if(undoButton)undoButton.onclick=()=>{if(!undo)return;try{if(Object.entries(undo.after).some(([k,v])=>localStorage.getItem(k)!==v)){undo=null;showUndo();notice('別の画面で記録が更新されたため、元に戻せません。再読み込みして確認してください。');return;}writeBatch(undo.before);undo=null;showUndo();location.reload();}catch(e){notice('元に戻せませんでした。端末の空き容量を確認してください。');}};
     document.getElementById('syncRetry').onclick=()=>reloaders.forEach(f=>f());
     window.addEventListener('online',()=>reloaders.forEach(f=>f()));
     window.addEventListener('offline',()=>{feedStates.forEach((s,id)=>feedStatus(id,s.label,'通信なし・最新情報は未確認',s.time));});

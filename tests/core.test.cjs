@@ -6,7 +6,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 function setup(options={}){
  const data=new Map(), notices=[];let failKey=null;
- const localStorage={get length(){return data.size},key(i){return [...data.keys()][i]},getItem(k){return data.has(k)?data.get(k):null},setItem(k,v){if(k===failKey){failKey=null;throw Error('QuotaExceeded');}data.set(k,String(v))},removeItem(k){data.delete(k)}};
+ const localStorage={get length(){return data.size},key(i){return [...data.keys()][i]},getItem(k){return data.has(k)?data.get(k):null},setItem(k,v){if(k===failKey){failKey=null;throw Error('QuotaExceeded');}data.set(k,String(v))},removeItem(k){if(k===failKey){failKey=null;throw Error('Storage unavailable');}data.delete(k)}};
  const elements=new Map();function element(id){if(!elements.has(id))elements.set(id,{textContent:'',hidden:true,replaceChildren(){},appendChild(){}});return elements.get(id);}
  const context=vm.createContext({window:{},document:{getElementById:element,createElement:()=>({}),addEventListener(){},activeElement:null},localStorage,setTimeout,clearTimeout,Date,AbortController,fetch:options.fetch||(()=>Promise.reject(Error('offline'))),navigator:{clipboard:{writeText:async()=>{throw Error('denied')}}},alert:s=>notices.push(s),console});
  vm.runInContext(fs.readFileSync(path.join(root,'app-core.js'),'utf8'),context);
@@ -59,4 +59,11 @@ test('map history is included in backups and invalid or duplicate history is rej
 test('hidden map history is backed up and rejects invalid or duplicate territory numbers',()=>{
  const {app,localStorage,data}=setup();localStorage.setItem('map-history-hidden',JSON.stringify(['4','2']));const backup=app.backup();data.clear();app.restore(backup);assert.deepEqual(JSON.parse(localStorage.getItem('map-history-hidden')),['4','2']);
  for(const value of [['4','4'],['all'],[4]])assert.throws(()=>app.validateBackup({format:'territory-backup',version:1,records:{'map-history-hidden':JSON.stringify(value)}}));
+});
+
+
+test('service completion rolls back the log if clearing active timer fails',()=>{
+ const {app,localStorage,failOnce}=setup(),active={start:100,terr:'4'},log=[{id:1,start:100,end:60100,min:1,date:'2026-10-04',terr:'4'}];
+ localStorage.setItem('svc-active',JSON.stringify(active));localStorage.setItem('svc-log','[]');failOnce('svc-active');assert.throws(()=>app.finishService(active,log));assert.equal(localStorage.getItem('svc-log'),'[]');assert.equal(localStorage.getItem('svc-active'),JSON.stringify(active));
+ app.finishService(active,log);assert.equal(localStorage.getItem('svc-active'),null);assert.equal(JSON.parse(localStorage.getItem('svc-log')).length,1);assert.throws(()=>app.finishService(active,log));
 });

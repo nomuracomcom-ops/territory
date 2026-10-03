@@ -108,7 +108,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .dnc-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #b23b3b;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
-<link rel="stylesheet" href="improvements.css?v=20261001-ui2">
+<link rel="stylesheet" href="improvements.css?v=20261004-review1">
 </head>
 <body>
 <div id="app">
@@ -126,6 +126,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <main id="personalHome" hidden>
 <div class="home-content">
 <div class="home-intro"><h1>伝道を楽しもう</h1><a class="home-browse" href="?t=all">区域地図</a></div>
+<a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
 <a id="homeActive" class="home-active" hidden></a>
 <div class="home-summary">
 <button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small id="homeDays">0日</small></button>
@@ -262,7 +263,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js?v=20261004-shimokobata"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20261001-ui2"></script>
+<script src="app-core.js?v=20261004-review1"></script>
 <script src="records.js?v=20261001-ui2"></script>
 <script src="personal.js?v=20261001-ui2"></script>
 <script src="status.js?v=20261001-ui2"></script>
@@ -385,7 +386,7 @@ let houses = load();
 let addMode = false;
 let meMarker = null;
 
-function load(){ try{return JSON.parse(localStorage.getItem(TERR_ID))||[]}catch(e){return []} }
+function load(){ try{const raw=localStorage.getItem(TERR_ID);if(raw===null)return [];App.validateEntry(TERR_ID,raw);return JSON.parse(raw);}catch(e){alert('戸建ての保存記録を読み込めませんでした。元の記録は保持しています。全記録のバックアップを確認してください。');return [];} }
 function save(){ App.store(TERR_ID, JSON.stringify(houses)); updateCount(); showRevisit(); }
 function updateCount(){ document.getElementById('count').textContent = '登録 '+Records.entries().length+'件'; }
 
@@ -567,8 +568,7 @@ svcBtn.onclick=function(){
     const min=Math.max(1, Math.round((end-a.start)/60000));
     const log=svcLoad();
     log.push({id:Date.now(), date:ymd(a.start), start:a.start, end:end, min:min, terr:a.terr||TPARAM});
-    svcSave(log);
-    svcSetActive(null);
+    try{App.finishService(a,log);}catch(e){alert('奉仕時間を保存できませんでした。'+e.message);return;}
     svcPaint();
     showDone(min);
   }
