@@ -114,7 +114,7 @@ window.App = (() => {
     window.addEventListener('offline',()=>{feedStates.forEach((s,id)=>feedStatus(id,s.label,'通信なし・最新情報は未確認',s.time));});
     const toolbar=document.querySelector('.toolbar'),record=document.getElementById('btnRecord');
     record.onclick=()=>{const open=!toolbar.classList.contains('record-open');toolbar.classList.toggle('record-open',open);record.setAttribute('aria-expanded',String(open));if(!open){api.mode=null;document.querySelectorAll('.record-action').forEach(b=>b.classList.remove('active'));document.getElementById('hint').style.display='none';}};
-    const names={btnAdd:'家の場所をタップ',btnAddApt:'建物の場所をタップ',btnDnc:'注意事項の場所をタップ'};
+    const names={btnAdd:'家の場所をタップ',btnAddApt:'建物の場所をタップ',btnDnc:'訪問しない要望のお宅をタップ（共有台帳が開きます）'};
     // Capture before old handlers; one central mode prevents overlapping map actions.
     Object.keys(names).forEach(id=>{const b=document.getElementById(id);b.addEventListener('click',e=>{e.stopImmediatePropagation();api.mode=api.mode===id?null:id;Object.keys(names).forEach(k=>document.getElementById(k).classList.toggle('active',api.mode===k));const h=document.getElementById('hint');h.textContent=api.mode?names[api.mode]+'（同じボタンで終了）':'';h.style.display=api.mode?'block':'none';},true);});
     document.querySelectorAll('.toolbar button').forEach(b=>b.setAttribute('aria-label',b.title||b.textContent));
