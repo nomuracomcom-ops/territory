@@ -263,3 +263,7 @@ test('damaged house data is preserved when adding a pin',async()=>{
 test('home offers the supplied congregation site without replacing the app tab',async()=>{
  const a=app('home');await a.flush();const link=a.document.getElementById('congregationSite');assert.equal(decodeURI(link.getAttribute('href')),'https://sites.google.com/view/kikyogaoka/ホーム');assert.equal(link.getAttribute('target'),'_blank');assert.match(link.getAttribute('rel'),/noopener/);
 });
+test('private request ledger receives fixed territory ID and coordinates without copying private notes',async()=>{
+ const a=app('2-23-1',undefined,{'terr-2-23-1':JSON.stringify([{id:7,lat:34.664,lng:136.135,status:'dnc',memo:'端末の個人メモ',date:'2026-10-01'}])});await a.flush();a.click('btnDnc');a.maps[0].emit('click',{latlng:{lat:34.664123,lng:136.135456}});const url=new URL(a.context.location.href);assert.equal(url.origin,'https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site');assert.equal(url.searchParams.get('t'),'T0005');assert.equal(url.searchParams.get('lat'),'34.664123');assert.deepEqual([...url.searchParams.keys()],['t','lat','lng']);assert.equal(a.context.copied,undefined);assert.match(a.data.get('terr-2-23-1'),/端末の個人メモ/);
+ const h=app('home');await h.flush();const link=h.document.getElementById('requestLedger');assert.equal(link.getAttribute('target'),'_blank');assert.match(link.getAttribute('rel'),/noopener/);
+});
