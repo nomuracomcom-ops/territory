@@ -128,6 +128,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="home-intro"><h1>伝道を楽しもう</h1><a class="home-browse" href="?t=all">区域地図</a></div>
 <a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
 <a id="requestLedger" class="congregation-site" href="https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site" target="_blank" rel="noopener noreferrer">🚫 訪問しない要望の共有台帳 ↗</a>
+<a id="companionHome" class="congregation-site" href="https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site" target="_blank" rel="noopener noreferrer">👥 同行者と共有 ↗</a>
 <a id="homeActive" class="home-active" hidden></a>
 <div class="home-summary">
 <button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small id="homeDays">0日</small></button>
@@ -163,6 +164,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
 <button id="btnDnc" class="record-action" title="訪問しない要望を共有台帳に登録">🚫</button>
+<button id="btnCompanion" title="同行者と共有" onclick="window.open('https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/?t='+encodeURIComponent(Territory.id(new URLSearchParams(location.search).get('t'))||''),'_blank','noopener,noreferrer')">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
