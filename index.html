@@ -681,17 +681,23 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 ;(function dnc(){
  if(ISALL || !window.TERRITORIES[TPARAM])return;
  const map=window.__LMAP,layer=L.layerGroup().addTo(map);
- const kinds={dnc:'訪問お断り',dog:'犬に注意',noentry:'立入禁止・オートロック',note:'注意'};
- const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vTFG_HRV9mGFPmgw66mr3qBNkfpctHi6PMcHGss8NAq7AbTWmE_mjr2LvytJKJ9cHaI2IWm8bcmnQPP/pub?gid=0&single=true&output=csv';
- App.feed('dnc','訪問お断り・注意事項',url,rows=>{
-   if(!rows.length || !['t','区域番号'].includes(rows[0][0].trim()) || rows[0].length!==5)throw Error('見出しが不正です');
-   return rows.slice(1).map(c=>{if(c.length!==5 || !/^(?:\d+(?:-\d+){0,2}|T\d{4,})$/.test(c[0].trim()) || !c[1].trim() || !c[2].trim() || !App.coordinate(Number(c[1]),Number(c[2])) || !Object.prototype.hasOwnProperty.call(kinds,c[3].trim()))throw Error('注意事項の形式が不正です');return [Territory.shared(c[0].trim())||c[0].trim(),...c.slice(1)];});
- },rows=>{
-   layer.clearLayers();rows.filter(c=>c[0]===String(TPARAM)).forEach(c=>{
-     const marker=L.marker([Number(c[1]),Number(c[2])],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(layer);
-     marker.bindPopup('<b>'+App.escape(kinds[c[3].trim()])+'</b><p>'+App.escape(c[4])+'</p><small>全員に共有されている注意事項</small>');
-   });
- });
+ const url='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/api/dnc-pins?t='+encodeURIComponent(Territory.id(TPARAM));
+ let fetching=false;
+ async function refreshPins(){
+   if(fetching)return;fetching=true;App.feedStatus('dnc','訪問しない位置','確認中');
+   try{
+     const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(12000)});
+     if(!response.ok)throw Error();const data=await response.json();
+     if(!Array.isArray(data.pins)||data.pins.some(p=>p.territory!==Territory.id(TPARAM)||Object.keys(p).some(k=>!['territory','lat','lng'].includes(k))||!App.coordinate(p.lat,p.lng)))throw Error();
+     layer.clearLayers();data.pins.forEach(p=>{
+       const marker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]}),zIndexOffset:500}).addTo(layer);
+       marker.bindPopup('<b>訪問しない</b><p>共有されている位置情報</p>');
+     });App.feedStatus('dnc','訪問しない位置','取得済み（'+data.pins.length+'件）',Date.now());
+   }catch{App.feedStatus('dnc','訪問しない位置','取得失敗・未確認');}
+   finally{fetching=false;}
+ }
+ void refreshPins();setInterval(()=>{if(!document.hidden)void refreshPins()},30000);
+ window.addEventListener('focus',refreshPins);document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshPins()});
  document.getElementById('btnDnc').onclick=()=>{};
  map.on('click',async e=>{
    if(App.mode!=='btnDnc')return;
