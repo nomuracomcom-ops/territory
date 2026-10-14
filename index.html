@@ -164,7 +164,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
 <button id="btnDnc" class="record-action" title="訪問しない要望を共有台帳に登録">🚫</button>
-<button id="btnCompanion" title="同行者と共有" onclick="window.open('https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/?t='+encodeURIComponent(Territory.id(new URLSearchParams(location.search).get('t'))||''),'_blank','noopener,noreferrer')">👥</button>
+<button id="btnCompanion" title="同行者と共有" onclick="PublicVisits.open(new URLSearchParams(location.search).get('t'))">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
@@ -704,5 +704,6 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 
 if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
+<script src="public-visits.js"></script>
 </body>
 </html>
