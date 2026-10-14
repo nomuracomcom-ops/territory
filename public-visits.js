@@ -4,11 +4,11 @@ window.PublicVisits=(()=>{
  const key=(lat,lng,room='')=>Number(lat).toFixed(5)+','+Number(lng).toFixed(5)+'|'+String(room).normalize('NFKC').trim();
  const date=t=>new Date(t+9*3600000).toISOString().slice(0,10);
  function timestamp(r){return Number.isSafeInteger(r.sharedUpdated)?r.sharedUpdated:(r.date&&Number.isFinite(Date.parse(r.date))?Date.parse(r.date+'T00:00:00+09:00'):0);}
- function publicRow(lat,lng,room,r){return {lat,lng,room,status:r.status,updated:timestamp(r)};}
+ function publicRow(lat,lng,room,r){return {lat,lng,room,status:r.status||'clear',updated:timestamp(r)};}
  function pack(territory,houses,apartments,shared={}){
   const rows=[];
-  houses.forEach(h=>{if(allowed.includes(h.status)&&h.status!=='clear')rows.push(publicRow(h.lat,h.lng,'',h));});
-  apartments.forEach(a=>{const rooms=shared[a.id]||a.rooms;rooms.forEach(r=>{if(allowed.includes(r.status)&&r.status!=='clear')rows.push(publicRow(a.lat,a.lng,r.no,r));});});
+  houses.forEach(h=>{if(allowed.includes(h.status)||(h.status===''&&h.sharedUpdated>0))rows.push(publicRow(h.lat,h.lng,'',h));});
+  apartments.forEach(a=>{const rooms=shared[a.id]||a.rooms;rooms.forEach(r=>{if(allowed.includes(r.status)||(r.status===''&&r.sharedUpdated>0))rows.push(publicRow(a.lat,a.lng,r.no,r));});});
   return {format:'territory-public-visits',version:1,territory,rows};
  }
  function validate(data,territory){
