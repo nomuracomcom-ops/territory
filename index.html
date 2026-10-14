@@ -426,7 +426,7 @@ return d;
 function bindPopup(popup, h, marker){
 const el = popup.getElement();
 el.querySelectorAll('.sts button').forEach(function(b){b.onclick=function(){
-h.status=b.dataset.s; h.date=today(); save();
+h.status=b.dataset.s; h.date=today(); h.sharedUpdated=Date.now(); save();
 marker.setIcon(pinIcon(STATUSES[h.status].color));
 el.querySelectorAll('.sts button').forEach(function(x){x.classList.remove('on');x.style.background='';x.setAttribute('aria-pressed','false');});
 b.classList.add('on'); b.style.background=STATUSES[h.status].color;b.setAttribute('aria-pressed','true');
@@ -652,8 +652,8 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
      const buttons=document.createElement('span');buttons.className='rbtns';row.appendChild(buttons);
      ORDER.forEach(st=>{const b=document.createElement('button');b.textContent=STATUSES[st].label;b.setAttribute('aria-label',r.no+' '+STATUSES[st].label);b.setAttribute('aria-pressed',String(r.status===st));if(r.status===st){b.className='on';b.style.background=STATUSES[st].color;}
        b.onclick=()=>{const status=r.status===st?'':st,date=status?Records.localDay():'';
-         if(a.shared){const existing=privateRooms(a).filter(x=>x.no!==r.no);records[a.id]=[...existing,{no:r.no,status,date}];saveRecords();}
-         else{const target=a.rooms.find(x=>x.no===r.no);target.status=status;target.date=date;save();}render();if(window.refreshVisitRecords)window.refreshVisitRecords();};buttons.appendChild(b);});
+         if(a.shared){const existing=privateRooms(a).filter(x=>x.no!==r.no);records[a.id]=[...existing,{no:r.no,status,date,sharedUpdated:Date.now()}];saveRecords();}
+         else{const target=a.rooms.find(x=>x.no===r.no);target.status=status;target.date=date;target.sharedUpdated=Date.now();save();}render();if(window.refreshVisitRecords)window.refreshVisitRecords();};buttons.appendChild(b);});
      if(!a.shared){const del=document.createElement('button');del.className='rdel';del.textContent='✕';del.setAttribute('aria-label',r.no+' を削除');del.onclick=()=>{if(!confirm(r.no+' を削除しますか？'))return;a.rooms=a.rooms.filter(x=>x.no!==r.no);save();render();};row.appendChild(del);}
      body.appendChild(row);
    });
