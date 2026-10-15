@@ -128,7 +128,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="home-intro"><h1>伝道を楽しもう</h1><a class="home-browse" href="?t=all">区域地図</a></div>
 <a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
 <a id="requestLedger" class="congregation-site" href="https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site" target="_blank" rel="noopener noreferrer">🚫 訪問しない要望の共有台帳 ↗</a>
-<a id="companionHome" class="congregation-site" href="https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site" target="_blank" rel="noopener noreferrer">👥 同行者と共有 ↗</a>
+<a id="companionHome" class="congregation-site" href="?t=all">👥 共有する区域を選ぶ</a>
 <a id="homeActive" class="home-active" hidden></a>
 <div class="home-summary">
 <button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small id="homeDays">0日</small></button>
@@ -170,7 +170,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
 <button id="btnDnc" class="record-action" title="訪問しない要望を共有台帳に登録">🚫</button>
-<button id="btnCompanion" title="同行者と共有" onclick="PublicVisits.open(new URLSearchParams(location.search).get('t'))">👥</button>
+<button id="btnCompanion" title="同行者と共有" onclick="InlineShare.open()">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
 </div>
@@ -482,6 +482,7 @@ document.getElementById('sheetX').onclick=function(){sheet.style.display='none';
 sheet.addEventListener('keydown',function(e){if(e.key==='Escape'){sheet.style.display='none';document.getElementById('btnList').focus();}});
 sheet.onclick=function(e){if(e.target===sheet)sheet.style.display='none';};
 function renderList(filter){ Records.render(filter); }
+window.addEventListener('inline-visits-updated',()=>{houses=load();render();updateCount();showRevisit();});
 window.refreshVisitRecords=function(){updateCount();showRevisit();if(sheet.style.display==='flex')renderList();};
 
 // ---- 使用終了時の整理（再訪問・訪問しない・奉仕時間・使用履歴は保持） ----
@@ -634,8 +635,12 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    if(!a.shared)return a.rooms;
    // When a locally-created building becomes shared, retain its existing room results.
    const source=local.find(x=>'local-'+x.id===a.id);
-   return a.rooms.map(r=>{const saved=privateRooms(a).find(x=>x.no===r.no)||(source && source.rooms.find(x=>x.no===r.no));return {no:r.no,status:saved?saved.status:'',date:saved?saved.date:''};});
+   const full=[...a.rooms,...privateRooms(a).filter(r=>!a.rooms.some(x=>x.no===r.no))];
+   return full.map(r=>{const saved=privateRooms(a).find(x=>x.no===r.no)||(source && source.rooms.find(x=>x.no===r.no));return {no:r.no,status:saved?saved.status:'',date:saved?saved.date:'',sharedUpdated:saved?saved.sharedUpdated:undefined};});
  }
+ window.inlineSharedBuildings=()=>shared;
+ window.inlineApartmentSnapshot=()=>all().map(a=>({...a,rooms:rooms(a)}));
+ window.addEventListener('inline-visits-updated',()=>{local=JSON.parse(localStorage.getItem(key)||'[]');records=JSON.parse(localStorage.getItem(recordsKey)||'{}');renderPins();if(current){const id=current.id;current=all().find(a=>a.id===id)||null;if(current)render();}if(window.refreshVisitRecords)window.refreshVisitRecords();});
  Records.register('apartments',()=>Records.apartmentRows(local,shared,records),r=>{
    const a=all().find(x=>x.id===r.buildingId && !!x.shared===r.buildingShared);
    if(!a)return;current=a;map.setView([a.lat,a.lng],18);render();sheet.style.display='flex';
@@ -718,7 +723,9 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 
 if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
-<script src="public-visits.js"></script>
+<script src="public-visits.js?v=20261016-inline"></script>
+<script src="inline-share.js?v=20261016-inline"></script>
 </body>
 </html>
+
 
