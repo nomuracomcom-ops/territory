@@ -8,7 +8,7 @@ window.InlineShare=(()=>{
   const old=new Map(before.map(r=>[key(r),r])),now=new Map(current.map(r=>[key(r),r])),versions=new Map(remote.map(r=>[key(r),r.version]));
   const result=[];
   for(const k of new Set([...old.keys(),...now.keys()])){
-   const a=old.get(k),b=now.get(k);if(a?.status===b?.status)continue;
+   const a=old.get(k),b=now.get(k);if(a?.status===b?.status||(a?.status==='clear'&&!b))continue;
    const r=b||{...a,status:'clear'};if(!a&&r.status==='clear')continue;
    const last=[...queue,...result].filter(e=>key(e)===k).at(-1);
    result.push({lat:r.lat,lng:r.lng,room:r.room,status:r.status,version:last?last.version+1:(versions.get(k)||0),operation:crypto.randomUUID()});
@@ -49,6 +49,8 @@ window.InlineShare=(()=>{
   }catch(error){if(error.status===410){state.ended=true;message='共有は終了しました。訪問記録はこの端末に残っています。';persist();}else message=error.message||'接続待ち・記録は端末に保持しています。';}
   finally{busy=false;render();}
  }
+ function recordCleanup(ref){const t=Territory.get(ref);if(!t)return;const k='inline-clear-before:'+t.id,old=localStorage.getItem(k);localStorage.setItem(k,String(Date.now()));return ()=>{if(old===null)localStorage.removeItem(k);else localStorage.setItem(k,old);};}
+ function seed(){const rows=snapshot(),seen=new Set(rows.map(key));for(const r of state?.baseline||[]){if(!seen.has(key(r))&&r.status!=='clear')rows.push({...publicRow(r),status:'clear',updated:Date.now()});}return rows;}
  function start(){if(busy)return;nonce=crypto.randomUUID();popup=window.open(service+'/connect?t='+encodeURIComponent(territory.id)+'&n='+nonce,'territory-sharing-connect','width=500,height=650');if(!popup){notice('ポップアップを許可して、もう一度「共有を始める」を押してください。');return;}notice('接続確認の画面でサインインしてください。地図はこのまま使えます。');}
  async function close(){document.activeElement?.blur();if(!state||busy){notice('同期が終わってから、もう一度操作してください。');return;}await tick();if(state.ended)return;if(state.queue.length||conflict){notice('未送信の記録を確認してから共有を終了してください。');return;}if(!confirm('今日の共有を終了しますか？全員の訪問状況と再訪問ピンは、それぞれの地図に残ります。'))return;busy=true;
   try{capture();if(state.queue.length)throw Error('新しい記録があります。同期してから終了してください。');const data=await api({action:'close'});capture();state.rows=data.rows;state.finalRows=data.rows;if(apply(data.rows))delete state.finalRows;state.ended=true;persist();notice(state.queue.length?'共有終了。終了中に付けた未送信の記録は自分の地図に残っています。':'共有を終了しました。記録はこの端末に保存済みです。');}catch(error){notice(error.message);}finally{busy=false;render();}
@@ -67,7 +69,7 @@ window.InlineShare=(()=>{
   try{const saved=JSON.parse(localStorage.getItem(storage)||'null');if(saved&&saved.territory===territory.id)state=saved;const id=q.get('s'),token=q.get('k');if(id&&token&&/^[a-f0-9-]{36}$/i.test(id)&&token.length===72&&(!state||state.id!==id)){state={id,token,territory:territory.id,queue:[],baseline:snapshot(),rows:[],ended:false};persist();panel.hidden=false;}if(state){if(!Array.isArray(state.queue)||!Array.isArray(state.baseline)||!Array.isArray(state.rows))throw Error();for(const e of state.queue)if(Object.keys(e).some(k=>!['lat','lng','room','status','version','operation'].includes(k))||!statuses.includes(e.status))throw Error();}}
   catch{state=null;notice('共有の接続情報を読み込めませんでした。訪問記録は保持しています。');}
   window.addEventListener('message',e=>{if(e.origin!==service||e.source!==popup||e.data?.nonce!==nonce)return;
-   if(e.data.type==='inline-share-ready'&&e.data.territory===territory.id){try{const rows=snapshot();seedRows=rows;PublicVisits.validate({format:'territory-public-visits',version:1,territory:territory.id,rows},territory.id);popup.postMessage({type:'inline-share-create',nonce,territory:territory.id,rows},service);}catch(error){notice(error.message);}}
+   if(e.data.type==='inline-share-ready'&&e.data.territory===territory.id){try{const rows=seed();seedRows=rows;PublicVisits.validate({format:'territory-public-visits',version:1,territory:territory.id,rows},territory.id);popup.postMessage({type:'inline-share-create',nonce,territory:territory.id,rows,clearBefore:Number(localStorage.getItem('inline-clear-before:'+territory.id)||0)},service);}catch(error){notice(error.message);}}
    if(e.data.type==='inline-share-created'){const d=e.data.data;if(d?.territory!==territory.id||typeof d.id!=='string'||typeof d.token!=='string'||typeof d.ownerKey!=='string')return;try{state={...d,queue:[],rows:[],baseline:seedRows||snapshot(),ended:false};persist();popup.close();nonce=null;notice('この地図で共有を開始しました。');void tick();}catch{notice('接続情報を保存できません。端末の空き容量を確認してください。');}}
   });
   const finishPending=()=>{if(state?.finalRows){try{if(apply(state.finalRows)){delete state.finalRows;persist();notice('最後の共有記録を保存しました。メモは自分だけに残っています。');}}catch(error){notice(error.message);}}};
@@ -75,5 +77,5 @@ window.InlineShare=(()=>{
   const check=()=>{if(!document.hidden)void tick();};setInterval(check,5000);window.addEventListener('focus',check);document.addEventListener('visibilitychange',check);window.addEventListener('beforeunload',()=>{try{capture()}catch{}});render();void tick();
  }
  if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();}
- return {open,changes,key};
+ return {open,changes,key,recordCleanup};
 })();
