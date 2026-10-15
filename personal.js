@@ -67,7 +67,7 @@ window.Personal = (() => {
     for(const [key,value] of Object.entries(next))if(expected[key]!==null && expected[key]!==JSON.stringify(value))changes[key]=JSON.stringify(value);
     return {terr,expected,changes,counts,total:Object.values(counts).reduce((n,v)=>n+v,0)};
   }
-  function cleanup(plan) { App.storeBatch(plan.changes,plan.expected);Records.reload(); }
+  function cleanup(plan) { const rollback=window.InlineShare?window.InlineShare.recordCleanup(plan.terr):null;try{App.storeBatch(plan.changes,plan.expected);}catch(e){if(rollback)rollback();throw e;}Records.reload(); }
   function requestCleanup(terr) {
     try{
       const plan=cleanupPlan(terr);
@@ -219,4 +219,5 @@ window.Personal = (() => {
   }
   return {serviceResetPlan,requestServiceReset,mount,start,remember,usedMaps,removeMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
 })();
+
 
