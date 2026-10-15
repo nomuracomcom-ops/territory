@@ -155,6 +155,28 @@ window.Personal = (() => {
     const active=safeRead('svc-active',null),resume=document.getElementById('homeActive');resume.hidden=!active;
     if(active){resume.href=mapLink(active.terr);resume.textContent='● 区域 '+Territory.number(active.terr)+' で伝道中 · 地図に戻る →';}
   }
+  function serviceResetPlan(scope,month){
+    if(!['month','all','timer'].includes(scope))throw Error('リセットの対象を確認してください。');
+    if(scope==='month'&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month||''))throw Error('表示する月を選んでください。');
+    const expected={'svc-log':localStorage.getItem('svc-log'),'svc-active':localStorage.getItem('svc-active')};
+    const log=read('svc-log',[]),active=read('svc-active',null),target=scope==='month'?log.filter(x=>x.date.slice(0,7)===month):scope==='all'?log:[];
+    const changes={};
+    if(scope==='month'||scope==='all')changes['svc-log']=JSON.stringify(scope==='all'?[]:log.filter(x=>x.date.slice(0,7)!==month));
+    if(scope==='all')changes['svc-active']='null';
+    if(scope==='timer'&&active)changes['svc-active']=JSON.stringify({...active,start:Date.now()});
+    return {scope,month,expected,changes,count:target.length,minutes:target.reduce((n,x)=>n+x.min,0),active:!!active};
+  }
+  function requestServiceReset(scope){
+    try{
+      const plan=serviceResetPlan(scope,document.getElementById('homeMonth').value);
+      if(scope==='timer'&&!plan.active){alert('現在、奉仕時間は計測していません。');return;}
+      if(scope!=='timer'&&!plan.count&&!(scope==='all'&&plan.active)){alert('対象の奉仕時間の記録はありません。');return;}
+      const message=scope==='timer'?'計測中の時間を0分に戻して、ここから計測し直しますか？\n保存済みの奉仕時間は残ります。':
+        (scope==='month'?plan.month+' の奉仕時間をリセットしますか？':'この端末のすべての奉仕時間をリセットしますか？')+'\n'+plan.count+'件・合計 '+duration(plan.minutes)+'\n'+(scope==='all'&&plan.active?'計測中の時間も破棄し、計測を停止します。':scope==='month'&&plan.active?'計測中の時間はそのまま継続します。':'')+'\n訪問記録・再訪問・メモ・使った地図は残ります。';
+      if(!confirm(message))return;
+      App.storeBatch(plan.changes,plan.expected);location.reload();
+    }catch(e){alert('奉仕時間をリセットできませんでした。'+e.message);}
+  }
   function render() {
     if(document.getElementById('personalHome').hidden)return;
     const query=document.getElementById('homeSearch').value.trim().toLocaleLowerCase(),rows=allRows();
@@ -177,6 +199,9 @@ window.Personal = (() => {
     document.getElementById('homeSync').appendChild(document.querySelector('.sync-panel'));
     document.getElementById('homeMonth').value=Records.localDay().slice(0,7);
     document.getElementById('homeMonth').onchange=renderService;
+    document.getElementById('homeResetMonth').onclick=()=>requestServiceReset('month');
+    document.getElementById('homeResetService').onclick=()=>requestServiceReset('all');
+    document.getElementById('homeResetTimer').onclick=()=>requestServiceReset('timer');
     document.getElementById('homeSearch').oninput=render;
     document.getElementById('homeMapEdit').onclick=()=>{editingMaps=!editingMaps;render();};
     document.getElementById('homeMapClear').onclick=requestClearMaps;
@@ -192,5 +217,6 @@ window.Personal = (() => {
     try{remember(window.__LMAP && t && known(t)?t:null);}catch(e){App.notice('地図の履歴を保存できませんでした。元の履歴は保持しています。');}
     render();
   }
-  return {mount,start,remember,usedMaps,removeMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
+  return {serviceResetPlan,requestServiceReset,mount,start,remember,usedMaps,removeMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
 })();
+
