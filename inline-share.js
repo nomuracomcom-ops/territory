@@ -24,7 +24,7 @@ window.InlineShare=(()=>{
   const live=state&&!state.ended;badge.hidden=!live;$('inlineShareStatus').textContent=message||(live?(state.queue.length?'未送信 '+state.queue.length+'件':'共有中・同期済み'):'この地図で同行者と共有できます。');
   badge.textContent=state?.queue?.length?'👥 共有中・未送信 '+state.queue.length+'件':'👥 共有中';
   $('inlineShareStart').hidden=!!live;$('inlineShareInvite').hidden=!live;$('inlineShareClose').hidden=!live||!state.ownerKey;$('inlineShareLeave').hidden=!live||!!state.ownerKey;
-  $('inlineShareConflict').hidden=!conflict;$('btnCompanion')?.classList.toggle('active',!!live);if($('cleanupRecords')){$('cleanupRecords').disabled=!!live;$('cleanupRecords').title=live?'共有を終了してから記録を整理してください。':'';}
+  $('inlineShareConflict').hidden=!conflict;$('btnCompanion')?.classList.toggle('active',!!live);if($('restoreAll'))$('restoreAll').disabled=!!live;if($('cleanupRecords')){$('cleanupRecords').disabled=!!live;$('cleanupRecords').title=live?'共有を終了してから記録を整理してください。':'';}
   if(live){const url=location.origin+location.pathname+'?t='+encodeURIComponent(territory.id)+'&s='+encodeURIComponent(state.id)+'&k='+encodeURIComponent(state.token);$('inlineShareLink').value=url;const qr=service+'/api/map-share-qr?id='+encodeURIComponent(state.id)+'&k='+encodeURIComponent(state.token);if($('inlineShareQR').getAttribute('src')!==qr)$('inlineShareQR').src=qr;}
  }
  function notice(text){message=text;render();}
@@ -33,17 +33,17 @@ window.InlineShare=(()=>{
  function apply(rows){
   const clean=checkedRows(rows),dirty=new Set(state.queue.map(key));const incoming=clean.filter(r=>!dirty.has(key(r)));
   // Do not disturb the private memo currently being typed. The next poll applies it after blur.
-  if(document.activeElement?.matches('input,textarea,[contenteditable="true"]'))return;
+  if(document.activeElement?.matches('input,textarea,[contenteditable="true"]'))return false;
   const v=read(),shared=window.inlineSharedBuildings?window.inlineSharedBuildings():[],r=structuredClone(v.r),localRows=[];
   for(const row of incoming){const building=row.room&&shared.find(a=>key({...a,room:''})===key({...row,room:''}));if(!building){localRows.push(row);continue;}const roomRows=r[building.id]||(r[building.id]=[]);let old=roomRows.find(x=>String(x.no).normalize('NFKC').trim()===row.room);if(old?.status==='dnc')continue;if(!old){if(row.status==='clear')continue;old={no:row.room,status:'',date:''};roomRows.push(old);}old.status=row.status==='clear'?'':row.status;old.date=row.status==='clear'?'':new Date((row.updated||Date.now())+9*3600000).toISOString().slice(0,10);old.sharedUpdated=row.updated;}
   const merged=PublicVisits.merge({format:'territory-public-visits',version:1,territory:territory.id,rows:localRows},territory.id,v.h,v.a,r,true);
   const values={[houseKey]:JSON.stringify(merged.houses),[aptKey]:JSON.stringify(merged.apartments),[roomKey]:JSON.stringify(merged.shared)},updates={};for(const [k,value] of Object.entries(values))if(value!==localStorage.getItem(k))updates[k]=value;
   if(Object.keys(updates).length){applying=true;try{App.storeBatch(updates);window.dispatchEvent(new Event('inline-visits-updated'));}finally{applying=false;}}
-  state.baseline=snapshot();persist();
+  state.baseline=snapshot();persist();return true;
  }
  async function tick(){
   if(!state||state.ended||busy)return;busy=true;
-  try{capture();let data=await api();if(data.territory!==territory.id)throw Error('区域が一致しません。');checkedRows(data.rows);state.rows=data.rows;state.expires=data.expires;
+  try{capture();let data=await api();if(data.territory!==territory.id)throw Error('区域が一致しません。');checkedRows(data.rows);state.rows=data.rows;state.expires=data.expires;if(data.ended){capture();state.finalRows=data.rows;if(apply(data.rows))delete state.finalRows;state.ended=true;persist();message=state.queue.length?'共有は終了しました。未送信の変更は自分の端末に残っています。':'最後の共有記録を保存しました。共有は終了しています。';return;}
    if(!conflict){while(state.queue.length){const e=state.queue[0];try{await api({action:'write',entry:e});}catch(error){if(error.status===409){conflict={entry:e,row:error.row};notice(error.message);break;}throw error;}state.queue.shift();persist();capture();}data=await api();}
    capture();state.rows=data.rows;apply(data.rows);if(!conflict)message=state.queue.length?'未送信の記録を送信中です。':'共有中・訪問状況を自動で保存しています。';persist();
   }catch(error){if(error.status===410){state.ended=true;message='共有は終了しました。訪問記録はこの端末に残っています。';persist();}else message=error.message||'接続待ち・記録は端末に保持しています。';}
@@ -51,7 +51,7 @@ window.InlineShare=(()=>{
  }
  function start(){if(busy)return;nonce=crypto.randomUUID();popup=window.open(service+'/connect?t='+encodeURIComponent(territory.id)+'&n='+nonce,'territory-sharing-connect','width=500,height=650');if(!popup){notice('ポップアップを許可して、もう一度「共有を始める」を押してください。');return;}notice('接続確認の画面でサインインしてください。地図はこのまま使えます。');}
  async function close(){document.activeElement?.blur();if(!state||busy){notice('同期が終わってから、もう一度操作してください。');return;}await tick();if(state.ended)return;if(state.queue.length||conflict){notice('未送信の記録を確認してから共有を終了してください。');return;}if(!confirm('今日の共有を終了しますか？全員の訪問状況と再訪問ピンは、それぞれの地図に残ります。'))return;busy=true;
-  try{capture();if(state.queue.length)throw Error('新しい記録があります。同期してから終了してください。');const data=await api({action:'close'});capture();state.rows=data.rows;apply(data.rows);state.ended=true;persist();notice(state.queue.length?'共有終了。終了中に付けた未送信の記録は自分の地図に残っています。':'共有を終了しました。記録はこの端末に保存済みです。');}catch(error){notice(error.message);}finally{busy=false;render();}
+  try{capture();if(state.queue.length)throw Error('新しい記録があります。同期してから終了してください。');const data=await api({action:'close'});capture();state.rows=data.rows;state.finalRows=data.rows;if(apply(data.rows))delete state.finalRows;state.ended=true;persist();notice(state.queue.length?'共有終了。終了中に付けた未送信の記録は自分の地図に残っています。':'共有を終了しました。記録はこの端末に保存済みです。');}catch(error){notice(error.message);}finally{busy=false;render();}
  }
  async function leave(){document.activeElement?.blur();if(busy)return;await tick();if(state?.queue.length||conflict){notice('未送信の記録を確認してから共有を離れてください。');return;}if(!confirm('自分だけ共有から離れますか？記録はこの端末に残り、同行者の共有は続きます。'))return;state.ended=true;persist();notice('共有から離れました。訪問記録は保存済みです。');}
  function resolve(useMine){if(!conflict)return;const k=key(conflict.entry),version=conflict.row?.version||0;if(useMine){let next=version;state.queue=state.queue.map(e=>key(e)===k?{...e,version:next++,operation:crypto.randomUUID()}:e);}else{state.queue=state.queue.filter(e=>key(e)!==k);const row=conflict.row||{...conflict.entry,status:'clear',version:0,updated:Date.now()};apply([row]);}conflict=null;persist();void tick();}
@@ -70,6 +70,8 @@ window.InlineShare=(()=>{
    if(e.data.type==='inline-share-ready'&&e.data.territory===territory.id){try{const rows=snapshot();seedRows=rows;PublicVisits.validate({format:'territory-public-visits',version:1,territory:territory.id,rows},territory.id);popup.postMessage({type:'inline-share-create',nonce,territory:territory.id,rows},service);}catch(error){notice(error.message);}}
    if(e.data.type==='inline-share-created'){const d=e.data.data;if(d?.territory!==territory.id||typeof d.id!=='string'||typeof d.token!=='string'||typeof d.ownerKey!=='string')return;try{state={...d,queue:[],rows:[],baseline:seedRows||snapshot(),ended:false};persist();popup.close();nonce=null;notice('この地図で共有を開始しました。');void tick();}catch{notice('接続情報を保存できません。端末の空き容量を確認してください。');}}
   });
+  const finishPending=()=>{if(state?.finalRows){try{if(apply(state.finalRows)){delete state.finalRows;persist();notice('最後の共有記録を保存しました。メモは自分だけに残っています。');}}catch(error){notice(error.message);}}};
+  document.addEventListener('focusout',()=>setTimeout(finishPending,0));finishPending();
   const check=()=>{if(!document.hidden)void tick();};setInterval(check,5000);window.addEventListener('focus',check);document.addEventListener('visibilitychange',check);window.addEventListener('beforeunload',()=>{try{capture()}catch{}});render();void tick();
  }
  if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();}
