@@ -20,12 +20,12 @@ window.PublicVisits=(()=>{
    const k=key(r.lat,r.lng,r.room);if(seen.has(k))throw Error('同じお宅・部屋の記録が重複しています。');seen.add(k);
   });return data.rows;
  }
- function merge(data,territory,houses,apartments,shared={}){
+ function merge(data,territory,houses,apartments,shared={},force=false){
   const rows=validate(data,territory),h=structuredClone(houses),a=structuredClone(apartments),s=structuredClone(shared);
   let nextId=Math.max(Date.now(),...h.map(x=>x.id),...a.map(x=>x.id));
   for(const r of rows){
-   if(!r.room){let old=h.find(x=>key(x.lat,x.lng)===key(r.lat,r.lng));if(old&&(old.status==='dnc'||timestamp(old)>r.updated))continue;if(!old){if(r.status==='clear')continue;old={id:++nextId,lat:r.lat,lng:r.lng,status:'',memo:'',date:''};h.push(old);}old.status=r.status==='clear'?'':r.status;old.date=r.status==='clear'?'':date(r.updated||Date.now());old.sharedUpdated=r.updated;
-   }else{let building=a.find(x=>key(x.lat,x.lng)===key(r.lat,r.lng));if(!building){if(r.status==='clear')continue;building={id:++nextId,lat:r.lat,lng:r.lng,name:'共有の建物',rooms:[]};a.push(building);}const roomRows=s[building.id]||building.rooms;let old=roomRows.find(x=>String(x.no).normalize('NFKC').trim()===r.room.normalize('NFKC').trim());if(old&&(old.status==='dnc'||timestamp(old)>r.updated))continue;if(!old){if(r.status==='clear')continue;old={no:r.room,status:'',date:''};roomRows.push(old);}old.status=r.status==='clear'?'':r.status;old.date=r.status==='clear'?'':date(r.updated||Date.now());old.sharedUpdated=r.updated;}
+   if(!r.room){let old=h.find(x=>key(x.lat,x.lng)===key(r.lat,r.lng));if(old&&(old.status==='dnc'||(!force&&timestamp(old)>r.updated)))continue;if(!old){if(r.status==='clear')continue;old={id:++nextId,lat:r.lat,lng:r.lng,status:'',memo:'',date:''};h.push(old);}old.status=r.status==='clear'?'':r.status;old.date=r.status==='clear'?'':date(r.updated||Date.now());old.sharedUpdated=r.updated;
+   }else{let building=a.find(x=>key(x.lat,x.lng)===key(r.lat,r.lng));if(!building){if(r.status==='clear')continue;building={id:++nextId,lat:r.lat,lng:r.lng,name:'共有の建物',rooms:[]};a.push(building);}const roomRows=s[building.id]||building.rooms;let old=roomRows.find(x=>String(x.no).normalize('NFKC').trim()===r.room.normalize('NFKC').trim());if(old&&(old.status==='dnc'||(!force&&timestamp(old)>r.updated)))continue;if(!old){if(r.status==='clear')continue;old={no:r.room,status:'',date:''};roomRows.push(old);}old.status=r.status==='clear'?'':r.status;old.date=r.status==='clear'?'':date(r.updated||Date.now());old.sharedUpdated=r.updated;}
   }return {houses:h,apartments:a,shared:s};
  }
  function download(data){const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='訪問記録_'+data.territory+'.json';link.click();URL.revokeObjectURL(url);}
@@ -50,3 +50,4 @@ window.PublicVisits=(()=>{
  if(typeof document!=='undefined'){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();}
  return {pack,validate,merge,open};
 })();
+
