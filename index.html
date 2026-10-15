@@ -630,13 +630,14 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  const icon=()=>L.divIcon({className:'',html:'<div class="apt-pin">🏢</div>',iconSize:[26,26],iconAnchor:[13,13]});
  function all(){const published=new Set(shared.map(a=>a.id));return [...local.filter(a=>!published.has('local-'+a.id)),...shared];}
  function renderPins(){layer.clearLayers();all().forEach(a=>{L.marker([a.lat,a.lng],{icon:icon()}).addTo(layer).on('click',()=>{current=a;render();sheet.style.display='flex';});});}
+ const roomNumber=r=>String(r.no).normalize('NFKC').trim();
  function privateRooms(a){return Object.prototype.hasOwnProperty.call(records,a.id)?records[a.id]:[];}
  function rooms(a){
    if(!a.shared)return a.rooms;
    // When a locally-created building becomes shared, retain its existing room results.
    const source=local.find(x=>'local-'+x.id===a.id);
-   const full=[...a.rooms,...privateRooms(a).filter(r=>!a.rooms.some(x=>x.no===r.no))];
-   return full.map(r=>{const saved=privateRooms(a).find(x=>x.no===r.no)||(source && source.rooms.find(x=>x.no===r.no));return {no:r.no,status:saved?saved.status:'',date:saved?saved.date:'',sharedUpdated:saved?saved.sharedUpdated:undefined};});
+   const full=[...a.rooms,...privateRooms(a).filter(r=>!a.rooms.some(x=>roomNumber(x)===roomNumber(r)))];
+   return full.map(r=>{const saved=privateRooms(a).find(x=>roomNumber(x)===roomNumber(r))||(source && source.rooms.find(x=>roomNumber(x)===roomNumber(r)));return {no:r.no,status:saved?saved.status:'',date:saved?saved.date:'',sharedUpdated:saved?saved.sharedUpdated:undefined};});
  }
  window.inlineSharedBuildings=()=>shared;
  window.inlineApartmentSnapshot=()=>all().map(a=>({...a,rooms:rooms(a)}));
@@ -665,7 +666,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
      const buttons=document.createElement('span');buttons.className='rbtns';row.appendChild(buttons);
      ORDER.forEach(st=>{const b=document.createElement('button');b.textContent=STATUSES[st].label;b.setAttribute('aria-label',r.no+' '+STATUSES[st].label);b.setAttribute('aria-pressed',String(r.status===st));if(r.status===st){b.className='on';b.style.background=STATUSES[st].color;}
        b.onclick=()=>{const status=r.status===st?'':st,date=status?Records.localDay():'';
-         if(a.shared){const existing=privateRooms(a).filter(x=>x.no!==r.no);records[a.id]=[...existing,{no:r.no,status,date,sharedUpdated:Date.now()}];saveRecords();}
+         if(a.shared){const existing=privateRooms(a).filter(x=>roomNumber(x)!==roomNumber(r));records[a.id]=[...existing,{no:r.no,status,date,sharedUpdated:Date.now()}];saveRecords();}
          else{const target=a.rooms.find(x=>x.no===r.no);target.status=status;target.date=date;target.sharedUpdated=Date.now();save();}render();if(window.refreshVisitRecords)window.refreshVisitRecords();};buttons.appendChild(b);});
      if(!a.shared){const del=document.createElement('button');del.className='rdel';del.textContent='✕';del.setAttribute('aria-label',r.no+' を削除');del.onclick=()=>{if(!confirm(r.no+' を削除しますか？'))return;a.rooms=a.rooms.filter(x=>x.no!==r.no);save();render();};row.appendChild(del);}
      body.appendChild(row);
@@ -723,8 +724,8 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 
 if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
-<script src="public-visits.js?v=20261016-inline"></script>
-<script src="inline-share.js?v=20261016-inline"></script>
+<script src="public-visits.js?v=20261016-inline2"></script>
+<script src="inline-share.js?v=20261016-inline2"></script>
 </body>
 </html>
 
