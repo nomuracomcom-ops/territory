@@ -148,6 +148,12 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <section id="homePanel-service" aria-label="奉仕時間" hidden>
 <label class="home-month">表示する月 <input id="homeMonth" type="month"></label>
 <p id="homeMonthSummary" class="home-month-summary"></p><div id="homeService"></div>
+<details class="records-details"><summary>奉仕時間をリセット</summary>
+<p class="privacy-note">この端末の奉仕時間だけを整理します。</p>
+<button id="homeResetMonth" type="button">表示中の月をリセット</button>
+<button id="homeResetService" type="button">すべての奉仕時間をリセット</button>
+<button id="homeResetTimer" type="button">計測中の時間を0分からやり直す</button>
+</details>
 </section>
 <details class="records-details home-settings"><summary>バックアップ・データの確認</summary>
 <p class="privacy-note">再訪問・奉仕時間・使った地図は、この端末に保存されます。</p>
@@ -198,6 +204,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <summary>奉仕時間・履歴 <small>全区域・この端末</small></summary>
 <div class="svc-sum" id="svcSum"></div>
 <div id="svcBody"></div>
+<button type="button" onclick="Personal.requestServiceReset('all')">すべての奉仕時間をリセット</button>
+<button type="button" onclick="Personal.requestServiceReset('timer')">計測中の時間を0分からやり直す</button>
 </details>
 <details class="records-details">
 <summary>バックアップ・記録の整理</summary>
@@ -268,7 +276,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
 <script src="app-core.js?v=20261010-ledger1"></script>
 <script src="records.js?v=20261001-ui2"></script>
-<script src="personal.js?v=20261001-ui2"></script>
+<script src="personal.js?v=20261016-service-reset"></script>
 <script src="status.js?v=20261001-ui2"></script>
 <script>
 const REQUEST_LEDGER='https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site';
@@ -713,3 +721,4 @@ if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 <script src="public-visits.js"></script>
 </body>
 </html>
+
