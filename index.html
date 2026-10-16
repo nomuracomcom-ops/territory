@@ -127,7 +127,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div class="home-content">
 <div class="home-intro"><h1>伝道を楽しもう</h1><a class="home-browse" href="?t=all">区域地図</a></div>
 <a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
-<a id="requestLedger" class="congregation-site" href="https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site" target="_blank" rel="noopener noreferrer">🚫 訪問しない要望の共有台帳 ↗</a>
+<a id="requestLedger" class="congregation-site" href="https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくない 報告フォーム ↗</a>
 <a id="companionHome" class="congregation-site" href="?t=all">👥 共有する区域を選ぶ</a>
 <a id="homeActive" class="home-active" hidden></a>
 <div class="home-summary">
@@ -169,7 +169,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
-<button id="btnDnc" class="record-action" title="訪問しない要望を共有台帳に登録">🚫</button>
+<button id="btnDnc" class="record-action" title="訪問してほしくないとの報告">🚫</button>
 <button id="btnCompanion" title="同行者と共有" onclick="InlineShare.open()">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
@@ -279,7 +279,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="personal.js?v=20261016-inline-cleanup"></script>
 <script src="status.js?v=20261001-ui2"></script>
 <script>
-const REQUEST_LEDGER='https://kikyogaoka-visit-requests.balmy-titan-5521.chatgpt.site';
+const REQUEST_LEDGER='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report';
 const TERR_REF = (new URLSearchParams(location.search).get('t')||'home');
 const TPARAM = Territory.resolve(TERR_REF)||TERR_REF;
 const ISALL = (TPARAM === 'all');
@@ -425,7 +425,7 @@ const d = document.createElement('div'); d.className="lp";
 d.innerHTML = '<h4>訪問記録</h4>'+
 '<p class="record-prompt">訪問の状態を選んで記録します（この端末のみ）</p>'+
 '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" aria-pressed="'+(h.status===s)+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
-'<a class="gmap" href="'+REQUEST_LEDGER+'/?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+h.lat+'&lng='+h.lng+'" target="_blank" rel="noopener noreferrer">🚫 訪問しない要望を全員に共有する</a>'+
+'<a class="gmap" href="'+REQUEST_LEDGER+'?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+h.lat+'&lng='+h.lng+'" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくないと報告する</a>'+
 '<textarea aria-label="訪問メモ" placeholder="メモ">'+App.escape(h.memo||'')+'</textarea>'+
 '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
 '<div class="row"><span class="date">'+App.escape(h.date||'')+'</span><button class="del">削除</button></div>';
@@ -717,7 +717,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    if(App.mode!=='btnDnc')return;
    // Only the stable territory ID and coordinates cross to the authenticated ledger.
    // Addresses, dates and any private notes are entered on the private screen.
-   const target=REQUEST_LEDGER+'/?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+e.latlng.lat.toFixed(6)+'&lng='+e.latlng.lng.toFixed(6);
+   const target=REQUEST_LEDGER+'?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+e.latlng.lat.toFixed(6)+'&lng='+e.latlng.lng.toFixed(6);
    location.href=target;
  });
 })();
