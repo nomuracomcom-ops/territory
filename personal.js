@@ -142,7 +142,6 @@ window.Personal = (() => {
     const monthly=log.filter(x=>x.date.slice(0,7)===month).sort((a,b)=>b.start-a.start);
     const current=log.filter(x=>x.date.slice(0,7)===Records.localDay().slice(0,7));
     document.getElementById('homeMinutes').textContent=duration(current.reduce((sum,x)=>sum+x.min,0));
-    document.getElementById('homeDays').textContent=new Set(current.map(x=>x.date)).size+'日';
     document.getElementById('homeMonthSummary').textContent=new Set(monthly.map(x=>x.date)).size+'日 · 合計 '+duration(monthly.reduce((sum,x)=>sum+x.min,0));
     const host=document.getElementById('homeService');host.replaceChildren();
     if(!monthly.length)empty(host,'この月の奉仕時間はまだありません。地図の「伝道スタート」から記録できます。');
@@ -183,16 +182,15 @@ window.Personal = (() => {
     renderMaps(rows,query);renderRevisits(rows,query);renderService();
   }
   function select(next) {
-    panel=next;document.getElementById('homeSearch').value='';
-    document.querySelectorAll('[data-home-panel]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.homePanel===panel)));
-    for(const key of ['maps','revisits','service'])document.getElementById('homePanel-'+key).hidden=key!==panel;
-    document.getElementById('homeSearchLabel').hidden=panel==='service';
-    document.getElementById('homeSearch').placeholder=panel==='maps'?'区域番号・地名で探す':'区域番号・メモ・部屋番号で探す';
+    panel=next;
+    for(const key of ['maps','revisits','service'])document.getElementById('homePanel-'+key).hidden=false;
+    document.getElementById('homeSearchLabel').hidden=false;
     render();
+    document.getElementById('homePanel-'+next).scrollIntoView?.({behavior:'smooth',block:'start'});
   }
   function mount() {
     document.body.classList.add('home-view');document.title='わたしの記録 | 桔梗が丘 電子区域地図';
-    document.querySelector('header .no').textContent='ホーム';document.querySelector('header .name').textContent='わたしの記録';
+    document.querySelector('header .no').textContent='✿ ききょう';document.querySelector('header .name').textContent='桔梗が丘会衆';
     document.getElementById('count').hidden=true;document.getElementById('btnHome').hidden=true;
     document.getElementById('personalHome').hidden=false;
     document.getElementById('homeBackupTools').appendChild(document.querySelector('.backup-tools'));
@@ -208,7 +206,8 @@ window.Personal = (() => {
     document.querySelectorAll('[data-home-panel]').forEach(b=>b.onclick=()=>select(b.dataset.homePanel));
     document.getElementById('homeRevisitShortcut').onclick=()=>select('revisits');
     document.getElementById('homeServiceShortcut').onclick=()=>select('service');
-    select('maps');
+    for(const key of ['maps','revisits','service'])document.getElementById('homePanel-'+key).hidden=false;
+    render();
     App.feed('apartments','共有の建物・部屋番号',Records.sharedURL,Records.decodeBuildings,data=>{shared=data;render();});
     window.addEventListener('storage',()=>{try{remember();}catch(e){App.notice('地図の履歴を更新できませんでした。元の履歴は保持しています。');}render();});
   }
@@ -219,5 +218,6 @@ window.Personal = (() => {
   }
   return {serviceResetPlan,requestServiceReset,mount,start,remember,usedMaps,removeMaps,allRows,cleanupPlan,cleanup,requestCleanup,recordLink};
 })();
+
 
 
