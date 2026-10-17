@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1f6feb">
+<meta name="theme-color" content="#7060aa">
 <title>桔梗が丘 電子区域地図</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
@@ -109,6 +109,11 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 .toolbar button#btnDnc.active{background:#b23b3b;color:#fff;}
 </style>
 <link rel="stylesheet" href="improvements.css?v=20261004-review1">
+<style>
+/* Kikyo personal dashboard: retain data and map status colors. */
+:root{--blue:#7060aa;--bar:#514482}body.home-view{background:#fcfbfe}.home-view header{background:#fff;color:#514482;border-bottom:1px solid #e7e2ef}.home-view header .no{background:#eee7fa;color:#7060aa}.home-view header .name{font-weight:700}#personalHome{background:#fcfbfe;color:#39334e}.home-content{max-width:1000px;padding-top:30px}.home-intro{margin-bottom:24px}.home-subtitle{font-size:13px;color:#81798e;margin:10px 0 0}.home-browse{background:#7060aa;border:0;border-bottom:4px solid #514482;color:#fff;border-radius:14px;padding:14px 20px;font-weight:700}.kikyo-welcome{display:flex;justify-content:space-between;align-items:center;height:185px;padding:24px 30px;border:1px solid #e1d6f2;border-radius:24px;background:#f0eafb;overflow:hidden;margin-bottom:22px}.kikyo-welcome>div{z-index:1}.kikyo-welcome span{font-size:11px;color:#7060aa;letter-spacing:2px}.kikyo-welcome h2{font-size:24px;margin:12px 0}.kikyo-welcome p{font-size:12px;color:#81798e;line-height:1.8}.kikyo-welcome svg{height:205px;width:240px;align-self:flex-end;margin-bottom:-24px}.home-summary{gap:16px;margin-bottom:25px}.home-summary button,.home-summary button+button{background:#fff;border:1px solid #e4dcef;border-bottom:3px solid #e1d6ee;border-radius:20px;color:#7060aa;padding:23px}.home-summary button>span{color:#81798e}.home-summary strong{font-size:29px}.home-summary small{font-size:11px}.home-search input{border-color:#e4dcef;border-radius:13px;margin-bottom:6px}.kikyo-section{background:white;border:1px solid #e7e2ef;border-radius:22px;padding:23px;margin:20px 0;scroll-margin-top:15px}.kikyo-section h2{font-size:18px;margin:0 0 15px}.kikyo-section h2>span{font-size:12px;color:#81798e;margin-left:8px}.home-map,.home-revisit{border-color:#e7e2ef;color:#39334e}.home-map-number{background:#f0eafa;color:#7060aa}.home-revisit{border-left-color:#aa96d1}.home-map-text .home-area-label,.home-arrow,.home-map-heading button{color:#81729d}.home-empty{border-color:#e1d6ee;color:#81798e;background:#fcfbfe}.home-month-summary{background:#f0eafa}.home-month input{border-color:#e4dcef;color:#514482}.kikyo-links{margin-top:25px}.kikyo-links .congregation-site{display:block;margin-top:12px}.home-settings{margin-top:18px}#personalHome button:focus-visible,#personalHome a:focus-visible{outline-color:#a28acb}
+@media(max-width:600px){.home-content{padding:24px 18px}.home-intro{display:block}.home-intro h1{font-size:27px}.home-browse{justify-content:center;margin-top:20px}.kikyo-welcome{height:155px;padding:20px}.kikyo-welcome h2{font-size:20px}.kikyo-welcome svg{height:175px;width:145px;flex-shrink:0;margin-right:-20px;margin-bottom:-20px}.kikyo-welcome p{font-size:11px;max-width:165px}.home-summary{gap:10px}.home-summary button,.home-summary button+button{padding:18px 15px}.home-summary strong{font-size:24px}.kikyo-section{padding:20px 15px}.home-search input{font-size:14px}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -125,27 +130,19 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <div id="map"></div>
 <main id="personalHome" hidden>
 <div class="home-content">
-<div class="home-intro"><h1>伝道を楽しもう</h1><a class="home-browse" href="?t=all">区域地図</a></div>
-<a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
-<a id="requestLedger" class="congregation-site" href="https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくない 報告フォーム ↗</a>
-<a id="companionHome" class="congregation-site" href="?t=all">👥 共有する区域を選ぶ</a>
+<div class="home-intro"><div><h1>伝道を楽しもう</h1><p class="home-subtitle">自分の記録を、ここでひと目に。</p></div><a class="home-browse" href="?t=all">区域地図をひらく →</a></div><div class="kikyo-welcome"><div><span>桔梗が丘会衆</span><h2>今日も、ここから。</h2><p>奉仕時間も、再訪問も、使った区域も。</p></div><svg viewBox="0 0 340 300" aria-hidden="true"><circle cx="209" cy="119" r="90" fill="#e5dcf5"/><circle cx="256" cy="60" r="24" fill="#f8d977"/><path d="M0 244 Q105 165 340 205V300H0" fill="#dce5d3"/><path d="M0 282 Q161 212 340 257V300H0" fill="#c8d9bd"/><path d="M115 300 Q260 245 197 210 Q168 193 209 172" fill="none" stroke="#fff9e5" stroke-width="31"/><path d="M71 217V120M270 213V150" stroke="#81965c" stroke-width="8"/><ellipse cx="70" cy="111" rx="38" ry="51" fill="#7caa71"/><ellipse cx="274" cy="142" rx="29" ry="39" fill="#91b47b"/><path d="M148 155L186 125L222 155V196H148Z" fill="#fff9e9"/><path d="M138 155L185 116L232 155" fill="none" stroke="#d0a36d" stroke-width="10" stroke-linejoin="round"/><rect x="177" y="166" width="18" height="30" rx="3" fill="#9cba8a"/><rect x="156" y="161" width="12" height="12" rx="2" fill="#ebd48f"/><g transform="translate(112 188)"><ellipse cx="0" cy="62" rx="30" ry="7" fill="#aaa0bf" opacity=".2"/><path d="M-9 45L-16 59M10 45L18 59" stroke="#6c895a" stroke-width="6" stroke-linecap="round"/><ellipse cy="27" rx="21" ry="25" fill="#8eb378"/><path d="M-16 27Q-41 9 -34 34Q-24 42 -16 33M16 27Q35 6 37 23Q35 36 18 34" fill="#789e65"/><g transform="translate(0 -6) scale(1.15)"><path d="M0 4 C-19 -7 -16 -24 0 -38 C16 -24 19 -7 0 4Z" fill="#8b78ca" transform="rotate(0)"/><path d="M0 4 C-19 -7 -16 -24 0 -38 C16 -24 19 -7 0 4Z" fill="#9c88d5" transform="rotate(72)"/><path d="M0 4 C-19 -7 -16 -24 0 -38 C16 -24 19 -7 0 4Z" fill="#8470c3" transform="rotate(144)"/><path d="M0 4 C-19 -7 -16 -24 0 -38 C16 -24 19 -7 0 4Z" fill="#a591dd" transform="rotate(216)"/><path d="M0 4 C-19 -7 -16 -24 0 -38 C16 -24 19 -7 0 4Z" fill="#7762b5" transform="rotate(288)"/><circle r="17" fill="#c8b9ec"/><circle cx="-6" cy="-1" r="2.2" fill="#423657"/><circle cx="6" cy="-1" r="2.2" fill="#423657"/><ellipse cx="-11" cy="5" rx="3.5" ry="2" fill="#eaaecb"/><ellipse cx="11" cy="5" rx="3.5" ry="2" fill="#eaaecb"/><path d="M-4 6Q0 11 4 6" fill="none" stroke="#423657" stroke-width="2" stroke-linecap="round"/></g></g><path d="M305 236l4-15 5 15M37 256l4-14 5 14" fill="none" stroke="#6f985a" stroke-width="3"/><g fill="#fffdf0"><circle cx="44" cy="210" r="4"/><circle cx="290" cy="260" r="4"/></g></svg></div>
 <a id="homeActive" class="home-active" hidden></a>
 <div class="home-summary">
-<button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small id="homeDays">0日</small></button>
+<button id="homeServiceShortcut" type="button"><span>今月の奉仕</span><strong id="homeMinutes">0分</strong><small>時間の記録を見る ↓</small></button>
 <button id="homeRevisitShortcut" type="button"><span>大切にしたい再訪問</span><strong><span id="homeRevisitCount">0</span><small> か所</small></strong><small>全区域から見る →</small></button>
 </div>
-<div class="home-tabs" role="group" aria-label="個人記録の表示">
-<button type="button" data-home-panel="maps" aria-pressed="true">使った地図 <span id="homeMapCount">0</span></button>
-<button type="button" data-home-panel="revisits" aria-pressed="false">再訪問</button>
-<button type="button" data-home-panel="service" aria-pressed="false">奉仕時間</button>
-</div>
-<label id="homeSearchLabel" class="home-search"><span class="visually-hidden">個人記録を検索</span><input id="homeSearch" type="search" placeholder="区域番号・地名で探す" autocomplete="off"></label>
-<section id="homePanel-maps" aria-label="使った地図">
+<label id="homeSearchLabel" class="home-search"><span class="visually-hidden">個人記録を検索</span><input id="homeSearch" type="search" placeholder="区域・再訪問のメモ・部屋番号で探す" autocomplete="off"></label>
+<section id="homePanel-maps" class="kikyo-section" aria-label="使った地図"><h2>使った区域の履歴 <span id="homeMapCount">0</span></h2>
 <div class="home-map-heading"><p class="home-help">最近開いた順。訪問記録を整理しても、この履歴は残ります。</p><button id="homeMapEdit" type="button" hidden>履歴を編集</button></div>
 <div id="homeMaps"></div><button id="homeMapClear" class="home-map-clear" type="button" hidden>使った地図の履歴をすべて削除</button>
 </section>
-<section id="homePanel-revisits" aria-label="再訪問" hidden><div id="homeRevisits"></div></section>
-<section id="homePanel-service" aria-label="奉仕時間" hidden>
+<section id="homePanel-revisits" class="kikyo-section" aria-label="再訪問"><h2>再訪問</h2><div id="homeRevisits"></div></section>
+<section id="homePanel-service" class="kikyo-section" aria-label="奉仕時間"><h2>奉仕時間</h2>
 <label class="home-month">表示する月 <input id="homeMonth" type="month"></label>
 <p id="homeMonthSummary" class="home-month-summary"></p><div id="homeService"></div>
 <details class="records-details"><summary>奉仕時間をリセット</summary>
@@ -155,7 +152,10 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="homeResetTimer" type="button">計測中の時間を0分からやり直す</button>
 </details>
 </section>
-<details class="records-details home-settings"><summary>バックアップ・データの確認</summary>
+<details class="records-details kikyo-links"><summary>会衆サイト・報告フォーム・共有</summary><a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
+<a id="requestLedger" class="congregation-site" href="https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくない 報告フォーム ↗</a>
+<a id="companionHome" class="congregation-site" href="?t=all">👥 共有する区域を選ぶ</a>
+</details><details class="records-details home-settings"><summary>バックアップ・データの確認</summary>
 <p class="privacy-note">再訪問・奉仕時間・使った地図は、この端末に保存されます。</p>
 <div id="homeBackupTools"></div><div id="homeSync"></div>
 </details>
@@ -276,7 +276,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
 <script src="app-core.js?v=20261010-ledger1"></script>
 <script src="records.js?v=20261001-ui2"></script>
-<script src="personal.js?v=20261016-inline-cleanup"></script>
+<script src="personal.js?v=20261017-kikyo-home"></script>
 <script src="status.js?v=20261001-ui2"></script>
 <script>
 const REQUEST_LEDGER='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report';
@@ -728,5 +728,6 @@ if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 <script src="inline-share.js?v=20261016-inline3"></script>
 </body>
 </html>
+
 
 
