@@ -121,6 +121,13 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 /* Emphasize the home scripture at every screen size. */
 .kikyo-welcome .home-scripture p{font-size:26px;font-weight:800;line-height:1.8}.home-scripture cite{font-size:18px;font-weight:800}@media(max-width:600px){.kikyo-welcome{flex-wrap:wrap}.kikyo-welcome .home-scripture{flex-basis:100%}.kikyo-welcome .home-scripture p{font-size:22px;line-height:1.8}.home-scripture cite{font-size:17px}.kikyo-welcome svg{margin-left:auto;width:115px;height:120px;margin-top:-15px}}
 </style>
+<style>
+#btnMenuHelp{font-weight:800}
+#mapMenuHelp{width:calc(100% - 28px);max-width:510px;max-height:85dvh;overflow:auto;border:1px solid #e1d6ee;border-radius:22px;padding:24px;color:#39334e;background:#fcfbfe;font-family:inherit;box-shadow:0 20px 70px #30204035}
+#mapMenuHelp::backdrop{background:#30204080}
+.menu-help-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}.menu-help-heading h2{font-size:21px;margin:0}.menu-help-heading button{border:0;background:none;font-size:30px;color:#7060aa;min-width:44px;min-height:44px;cursor:pointer}
+.menu-help-intro{font-size:13px;line-height:1.8;color:#81798e}.menu-help-list{margin:18px 0}.menu-help-list>div{padding:14px 0;border-bottom:1px solid #e7e2ef}.menu-help-list dt{font-size:15px;font-weight:700;display:flex;gap:10px;align-items:center}.menu-help-list dt span{display:inline-flex;min-width:35px;justify-content:center;font-size:21px;color:#7060aa}.menu-help-list dd{font-size:13px;line-height:1.8;margin:6px 0 0 45px}.menu-help-close{display:block;width:100%;border:0;border-bottom:3px solid #514482;background:#7060aa;color:#fff;border-radius:13px;min-height:46px;font-size:15px;font-weight:700;cursor:pointer}#mapMenuHelp button:focus-visible{outline:3px solid #a28acb;outline-offset:3px}
+</style>
 </head>
 <body>
 <div id="app">
@@ -178,6 +185,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnCompanion" title="同行者と共有" onclick="InlineShare.open()">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
+<button id="btnMenuHelp" type="button" title="アイコンの使い方" aria-label="アイコンの使い方" aria-haspopup="dialog">？</button>
 </div>
 <details class="legend"><summary>記号の説明</summary>
 <span class="dot" style="background:#f5b400"></span>会えた<br>
@@ -731,6 +739,35 @@ if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
 <script src="public-visits.js?v=20261016-inline3"></script>
 <script src="inline-share.js?v=20261016-inline3"></script>
+
+<dialog id="mapMenuHelp" aria-labelledby="mapMenuHelpTitle">
+<div class="menu-help-heading"><h2 id="mapMenuHelpTitle">地図のアイコン</h2><form method="dialog"><button type="submit" aria-label="説明を閉じる">×</button></form></div>
+<p class="menu-help-intro">使いたいアイコンをタップしてください。</p>
+<dl class="menu-help-list">
+<div><dt><span>⌂</span>ホーム</dt><dd>全区域の再訪問・奉仕時間・使った区域の履歴を確認します。</dd></div>
+<div><dt><span>☰</span>メニュー</dt><dd>地図の操作ボタンを表示・非表示にします。</dd></div>
+<div><dt><span>📍</span>現在地</dt><dd>自分のいる場所に地図を移動します。位置情報の許可が必要です。</dd></div>
+<div><dt><span>➕</span>家を追加</dt><dd>押してから地図の家の位置をタップすると、訪問記録を付けられます。</dd></div>
+<div><dt><span>🏢</span>建物を追加</dt><dd>押してから地図をタップし、アパート・マンションの建物と部屋を登録します。</dd></div>
+<div><dt><span>🚫</span>報告フォーム</dt><dd>押してから該当する家の位置をタップすると、「訪問してほしくない」の報告フォームが開きます。</dd></div>
+<div><dt><span>👥</span>同行者と共有</dt><dd>同行者と訪問の記録を共有するための画面を開きます。</dd></div>
+<div><dt><span>📋</span>訪問記録</dt><dd>この区域の家・部屋の記録を一覧で確認します。検索や記録の整理もできます。</dd></div>
+<div><dt><span>🗺️</span>全体図</dt><dd>区域全体の配置を見たり、別の区域を探したりできます。</dd></div>
+<div><dt><span>↩</span>元に戻す</dt><dd>拡大・縮小ボタンの下にあります。直前の記録変更を元に戻します。</dd></div>
+<div><dt><span>＋ −</span>拡大・縮小</dt><dd>地図を拡大・縮小します。指で広げたり縮めたりしても操作できます。</dd></div>
+<div><dt><span>▶</span>伝道スタート</dt><dd>奉仕時間の計測を始めます。終了するときも同じボタンを押します。</dd></div>
+</dl>
+<p class="menu-help-intro">家・建物の追加や報告の位置選択は、同じアイコンをもう一度押すと終了できます。</p>
+<form method="dialog"><button class="menu-help-close" type="submit">閉じる</button></form>
+</dialog>
+<script>
+(function(){
+ const help=document.getElementById('mapMenuHelp');
+ document.getElementById('btnMenuHelp').addEventListener('click',()=>help.showModal());
+ help.addEventListener('click',e=>{if(e.target===help){const r=help.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)help.close();}});
+})();
+</script>
+
 </body>
 </html>
 
