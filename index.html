@@ -290,7 +290,6 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="app-core.js?v=20261010-ledger1"></script>
 <script src="records.js?v=20261001-ui2"></script>
 <script src="personal.js?v=20261017-kikyo-home"></script>
-<script src="status.js?v=20261001-ui2"></script>
 <script>
 const REQUEST_LEDGER='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report';
 const TERR_REF = (new URLSearchParams(location.search).get('t')||'home');
@@ -356,28 +355,21 @@ function buildOverview(){
   if(bounds) map.fitBounds(bounds,{padding:[30,30]});
   setTimeout(function(){ map.invalidateSize(); }, 300);
 
-  // ---- 区域一覧（状態バッジ付き。状態は status.js の window.TERR_STATUS から）----
+  // ---- 公開する区域一覧。貸出・進捗は非公開の管理シートで扱う。----
   const ovBtn=document.getElementById('btnOvList');
   ovBtn.style.display='block';
   const ovSheet=document.getElementById('ovSheet');
   ovBtn.onclick=function(){ renderOv(); ovSheet.style.display='flex'; };
   document.getElementById('ovX').onclick=function(){ ovSheet.style.display='none'; };
   ovSheet.onclick=function(e){ if(e.target===ovSheet) ovSheet.style.display='none'; };
-  window.refreshOverviewStatus = function(){ if(ovSheet.style.display==='flex') renderOv(); };
   function renderOv(){
-    const TT=window.TERRITORIES||{}, SS=window.TERR_STATUS||{};
+    const TT=window.TERRITORIES||{};
     const nums=Object.keys(TT).sort(function(a,b){return Territory.number(a).localeCompare(Territory.number(b),undefined,{numeric:true});});
-    let free=0;
     const rows=nums.map(function(n){
-      const st=SS[n]||''; let cls='na', lab='状況未確認';
-      if(st==='空き'){ cls='free'; lab='空き'; free++; }
-      else if(st==='貸出中'){ cls='used'; lab='貸出中'; }
-      else if(st){ cls='used'; lab=st; }
       return '<div class="ov-item" data-n="'+n+'"><div class="num">'+App.escape(Territory.number(n))+'</div>'+
-        '<div class="nm">'+App.escape(TT[n].name||('区域'+n))+'</div>'+
-        '<span class="ov-badge '+cls+'">'+App.escape(lab)+'</span></div>';
+        '<div class="nm">'+App.escape(TT[n].name||('区域'+n))+'</div></div>';
     }).join('');
-    document.getElementById('ovSum').innerHTML='全 '+nums.length+' 区域 ・ 空き <b>'+free+'</b>';
+    document.getElementById('ovSum').textContent='全 '+nums.length+' 区域';
     document.getElementById('ovBody').innerHTML=rows||'<div class="empty">区域がありません。</div>';
     document.getElementById('ovBody').querySelectorAll('.ov-item').forEach(function(r){
       r.onclick=function(){ location.search=Territory.url(r.dataset.n); };
