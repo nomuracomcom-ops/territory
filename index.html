@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#7060aa">
 <title>桔梗が丘 電子区域地図</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="offline.css?v=20261019-offline1">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css"/>
 <style>
 :root{
 --grey:#8a8f98; --blue:#1f6feb; --red:#d9333f; --green:#2ea043;
@@ -283,10 +284,10 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="territories.js?v=20261008-kuramochiB"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20261019-menu1"></script>
+<script src="app-core.js?v=20261019-offline1"></script>
 <script src="records.js?v=20261001-ui2"></script>
 <script src="personal.js?v=20261017-kikyo-home"></script>
 <script>
@@ -324,7 +325,7 @@ function buildOverview(){
   const map = L.map('map',{zoomControl:false,maxZoom:21}).setView([34.62,136.16],12);
   L.control.zoom({position:'topright'}).addTo(map);
   L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{
-    maxZoom:21, maxNativeZoom:18, attribution:"地理院地図（国土地理院）"
+    maxZoom:21, maxNativeZoom:18, attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル（国土地理院）</a>'
   }).addTo(map);
 
   let bounds = null;
@@ -392,7 +393,7 @@ const BOUNDARY = TDATA.boundary;
 const map = L.map('map',{zoomControl:false,maxZoom:21}).setView([34.6437,136.1150],17);
 L.control.zoom({position:'topright'}).addTo(map);
 L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{
-maxZoom:21, maxNativeZoom:18, attribution:"地理院地図（国土地理院）"
+maxZoom:21, maxNativeZoom:18, attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル（国土地理院）</a>'
 }).addTo(map);
 const poly = L.polygon(BOUNDARY,{color:"#d9333f",weight:3,fillColor:"#d9333f",fillOpacity:.10}).addTo(map);
 map.fitBounds(poly.getBounds(),{padding:[40,40]});
@@ -701,20 +702,29 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  if(ISALL || !window.TERRITORIES[TPARAM])return;
  const map=window.__LMAP,layer=L.layerGroup().addTo(map);
  const url='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/api/dnc-pins?t='+encodeURIComponent(Territory.id(TPARAM));
- let fetching=false;
+ let fetching=false,last=null;
+ const cacheKey='offline-dnc-pins:'+Territory.id(TPARAM);
+ function showPins(pins){
+   if(!Array.isArray(pins)||pins.some(p=>p.territory!==Territory.id(TPARAM)||Object.keys(p).some(k=>!['territory','lat','lng'].includes(k))||!App.coordinate(p.lat,p.lng)))throw Error();
+   layer.clearLayers();pins.forEach(p=>{
+     const marker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]}),zIndexOffset:500}).addTo(layer);
+     marker.bindPopup('<b>訪問しない</b><p>最後に取得した共有位置です。通信がない間の変更は確認できません。</p>');
+   });
+ }
+ try{const saved=JSON.parse(localStorage.getItem(cacheKey)||'null');if(saved&&Number.isFinite(saved.time)){showPins(saved.pins);last=saved.time;App.feedStatus('dnc','訪問しない位置','保存済み・最新は未確認',last);}}catch{}
  async function refreshPins(){
-   if(fetching)return;fetching=true;App.feedStatus('dnc','訪問しない位置','確認中');
+   if(fetching)return;
+   if(navigator.onLine===false){App.feedStatus('dnc','訪問しない位置',last?'保存済み・最新は未確認':'通信なし・未確認',last);return;}
+   fetching=true;App.feedStatus('dnc','訪問しない位置','確認中',last);
    try{
      const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(12000)});
-     if(!response.ok)throw Error();const data=await response.json();
-     if(!Array.isArray(data.pins)||data.pins.some(p=>p.territory!==Territory.id(TPARAM)||Object.keys(p).some(k=>!['territory','lat','lng'].includes(k))||!App.coordinate(p.lat,p.lng)))throw Error();
-     layer.clearLayers();data.pins.forEach(p=>{
-       const marker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="dnc-pin">🚫</div>',iconSize:[24,24],iconAnchor:[12,12]}),zIndexOffset:500}).addTo(layer);
-       marker.bindPopup('<b>訪問しない</b><p>共有されている位置情報</p>');
-     });App.feedStatus('dnc','訪問しない位置','取得済み（'+data.pins.length+'件）',Date.now());
-   }catch{App.feedStatus('dnc','訪問しない位置','取得失敗・未確認');}
+     if(!response.ok)throw Error();const data=await response.json();showPins(data.pins);last=Date.now();
+     try{localStorage.setItem(cacheKey,JSON.stringify({pins:data.pins,time:last}));}catch{}
+     App.feedStatus('dnc','訪問しない位置','取得済み（'+data.pins.length+'件）',last);
+   }catch{App.feedStatus('dnc','訪問しない位置',last?'保存済み・最新は未確認':'取得失敗・未確認',last);}
    finally{fetching=false;}
  }
+ window.addEventListener('online',refreshPins);
  void refreshPins();setInterval(()=>{if(!document.hidden)void refreshPins()},30000);
  window.addEventListener('focus',refreshPins);document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshPins()});
 
@@ -723,7 +733,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
 if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 </script>
 <script src="public-visits.js?v=20261016-inline3"></script>
-<script src="inline-share.js?v=20261016-inline3"></script>
+<script src="inline-share.js?v=20261019-offline1"></script>
 
 <dialog id="mapMenuHelp" aria-labelledby="mapMenuHelpTitle">
 <div class="menu-help-heading"><h2 id="mapMenuHelpTitle">地図のアイコン</h2><form method="dialog"><button type="submit" aria-label="説明を閉じる">×</button></form></div>
@@ -752,6 +762,8 @@ if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 })();
 </script>
 
+<script src="offline-core.js?v=20261019-offline1"></script>
+<script src="offline.js?v=20261019-offline1"></script>
 </body>
 </html>
 

@@ -44,10 +44,12 @@ window.App = (() => {
   const reloaders=[];
   function feed(id,label,url,decode,apply){
     let last=null, busy=false;
+    const cacheKey=id==='apartments'?'offline-public-buildings-v1':null;
+    if(cacheKey){try{const saved=JSON.parse(localStorage.getItem(cacheKey)||'null');if(saved&&typeof saved.csv==='string'&&Number.isFinite(saved.time)){apply(decode(parseCSV(saved.csv)));last=saved.time;feedStatus(id,label,'保存済み・最新は未確認',last);}}catch{}}
     async function refresh(){
       if(busy)return;busy=true;feedStatus(id,label,'確認中',last);
       const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
-      try{const r=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{signal:controller.signal});if(!r.ok)throw Error(r.status);const data=decode(parseCSV(await r.text()));apply(data);last=Date.now();feedStatus(id,label,'取得済み',last);}
+      try{const r=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{signal:controller.signal});if(!r.ok)throw Error(r.status);const csv=await r.text(),data=decode(parseCSV(csv));apply(data);last=Date.now();if(cacheKey){try{localStorage.setItem(cacheKey,JSON.stringify({csv,time:last}));}catch{}}feedStatus(id,label,'取得済み',last);}
       catch(e){feedStatus(id,label,last?'取得失敗・前回の表示を保持':'取得失敗・未確認',last);}
       finally{clearTimeout(timer);busy=false;}
     }
