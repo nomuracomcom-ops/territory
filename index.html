@@ -181,7 +181,6 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <button id="btnLoc" title="現在地">📍</button>
 <button id="btnAdd" class="record-action" title="家を追加">➕</button>
 <button id="btnAddApt" class="record-action" title="アパート/マンションを追加">🏢</button>
-<button id="btnDnc" class="record-action" title="訪問してほしくないとの報告">🚫</button>
 <button id="btnCompanion" title="同行者と共有" onclick="InlineShare.open()">👥</button>
 <button id="btnList" title="一覧">📋</button>
 <button id="btnAll" title="全体図へ">🗺️</button>
@@ -287,7 +286,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="territories.js?v=20261008-kuramochiB"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
-<script src="app-core.js?v=20261010-ledger1"></script>
+<script src="app-core.js?v=20261019-menu1"></script>
 <script src="records.js?v=20261001-ui2"></script>
 <script src="personal.js?v=20261017-kikyo-home"></script>
 <script>
@@ -431,7 +430,7 @@ d.innerHTML = '<h4>訪問記録</h4>'+
 '<p class="record-prompt">訪問の状態を選んで記録します（この端末のみ）</p>'+
 '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" aria-pressed="'+(h.status===s)+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
 '<a class="gmap" href="'+REQUEST_LEDGER+'?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+h.lat+'&lng='+h.lng+'" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくないと報告する</a>'+
-'<textarea aria-label="訪問メモ" placeholder="メモ">'+App.escape(h.memo||'')+'</textarea>'+
+'<textarea '+(h.status==='dnc'?'hidden ':'')+'aria-label="訪問メモ" placeholder="メモ">'+App.escape(h.memo||'')+'</textarea>'+
 '<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
 '<div class="row"><span class="date">'+App.escape(h.date||'')+'</span><button class="del">削除</button></div>';
 return d;
@@ -440,6 +439,7 @@ function bindPopup(popup, h, marker){
 const el = popup.getElement();
 el.querySelectorAll('.sts button').forEach(function(b){b.onclick=function(){
 h.status=b.dataset.s; h.date=today(); h.sharedUpdated=Date.now(); save();
+el.querySelector('textarea').hidden=h.status==='dnc';
 marker.setIcon(pinIcon(STATUSES[h.status].color));
 el.querySelectorAll('.sts button').forEach(function(x){x.classList.remove('on');x.style.background='';x.setAttribute('aria-pressed','false');});
 b.classList.add('on'); b.style.background=STATUSES[h.status].color;b.setAttribute('aria-pressed','true');
@@ -717,14 +717,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
  }
  void refreshPins();setInterval(()=>{if(!document.hidden)void refreshPins()},30000);
  window.addEventListener('focus',refreshPins);document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshPins()});
- document.getElementById('btnDnc').onclick=()=>{};
- map.on('click',async e=>{
-   if(App.mode!=='btnDnc')return;
-   // Only the stable territory ID and coordinates cross to the authenticated ledger.
-   // Addresses, dates and any private notes are entered on the private screen.
-   const target=REQUEST_LEDGER+'?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+e.latlng.lat.toFixed(6)+'&lng='+e.latlng.lng.toFixed(6);
-   location.href=target;
- });
+
 })();
 
 if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
@@ -739,9 +732,8 @@ if(!ISHOME && !ISALL && window.TERRITORIES[TPARAM])Records.openLinked();
 <div><dt><span>⌂</span>ホーム</dt><dd>全区域の再訪問・奉仕時間・使った区域の履歴を確認します。</dd></div>
 <div><dt><span>☰</span>メニュー</dt><dd>地図の操作ボタンを表示・非表示にします。</dd></div>
 <div><dt><span>📍</span>現在地</dt><dd>自分のいる場所に地図を移動します。位置情報の許可が必要です。</dd></div>
-<div><dt><span>➕</span>家を追加</dt><dd>押してから地図の家の位置をタップすると、訪問記録を付けられます。</dd></div>
+<div><dt><span>➕</span>家を追加</dt><dd>押してから地図の家の位置をタップすると、訪問記録を付けられます。「訪問してほしくないと報告する」から報告フォームを開けます。</dd></div>
 <div><dt><span>🏢</span>建物を追加</dt><dd>押してから地図をタップし、アパート・マンションの建物と部屋を登録します。</dd></div>
-<div><dt><span>🚫</span>報告フォーム</dt><dd>押してから該当する家の位置をタップすると、「訪問してほしくない」の報告フォームが開きます。</dd></div>
 <div><dt><span>👥</span>同行者と共有</dt><dd>同行者と訪問の記録を共有するための画面を開きます。</dd></div>
 <div><dt><span>📋</span>訪問記録</dt><dd>この区域の家・部屋の記録を一覧で確認します。検索や記録の整理もできます。</dd></div>
 <div><dt><span>🗺️</span>全体図</dt><dd>区域全体の配置を見たり、別の区域を探したりできます。</dd></div>
