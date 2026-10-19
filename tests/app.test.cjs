@@ -268,10 +268,10 @@ test('house popup is the report entry and hides notes only for do-not-visit stat
  const a=app('2-23-1',undefined,{'terr-2-23-1':raw});await a.flush();assert.equal(a.document.getElementById('btnDnc'),null);
  const marker=a.maps[0].items.find(g=>g.items && g.items.some(m=>typeof m.popup==='function')).items[0];
  const popup=marker.popup();a.document.body.appendChild(popup);marker.handlers.popupopen({popup:{getElement:()=>popup}});
- const note=popup.querySelector('textarea');assert.equal(note.hidden,true);
+ const note=popup.querySelector('textarea');assert.equal(note.hidden,true);assert.equal(popup.querySelector('[data-s="dnc"]'),null);assert.equal(JSON.parse(a.data.get('terr-2-23-1'))[0].status,'dnc');
  const link=[...popup.querySelectorAll('a')].find(e=>e.textContent.includes('訪問してほしくない'));const url=new URL(link.getAttribute('href'));
  assert.equal(url.origin,'https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site');assert.equal(url.pathname,'/report');assert.equal(url.searchParams.get('t'),'T0005');assert.equal(url.searchParams.get('lat'),'34.664123');assert.deepEqual([...url.searchParams.keys()],['t','lat','lng']);
  popup.querySelector('[data-s="revisit"]').click();assert.equal(note.hidden,false);assert.equal(note.value,'端末の個人メモ');
- popup.querySelector('[data-s="dnc"]').click();assert.equal(note.hidden,true);assert.equal(JSON.parse(a.data.get('terr-2-23-1'))[0].memo,'端末の個人メモ');
+ assert.equal(JSON.parse(a.data.get('terr-2-23-1'))[0].memo,'端末の個人メモ');
  a.click('btnAdd');assert.equal(a.context.App.mode,'btnAdd');
 });

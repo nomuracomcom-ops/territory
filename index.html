@@ -303,7 +303,7 @@ posted:{label:"投函", color:"#2ea043"},
 dnc:{label:"訪問しない", color:"#d9333f"},
 away:{label:"留守", color:"#9E9E9E"}
 };
-const ORDER = ["met","revisit","posted","dnc","away"];
+const ORDER = ["met","revisit","posted","away"];
 
 
 // ====== 全体図（?t=all）／各区域画面の振り分け ======
@@ -431,7 +431,7 @@ d.innerHTML = '<h4>訪問記録</h4>'+
 '<div class="sts">'+ORDER.map(function(s){return '<button data-s="'+s+'" aria-pressed="'+(h.status===s)+'" class="'+(h.status===s?'on':'')+'" style="'+(h.status===s?'background:'+STATUSES[s].color:'')+'">'+STATUSES[s].label+'</button>';}).join('')+'</div>'+
 '<a class="gmap" href="'+REQUEST_LEDGER+'?t='+encodeURIComponent(Territory.id(TPARAM))+'&lat='+h.lat+'&lng='+h.lng+'" target="_blank" rel="noopener noreferrer">🚫 訪問してほしくないと報告する</a>'+
 '<textarea '+(h.status==='dnc'?'hidden ':'')+'aria-label="訪問メモ" placeholder="メモ">'+App.escape(h.memo||'')+'</textarea>'+
-'<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=walking" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
+'<a class="gmap" href="https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lng+'&travelmode=driving" target="_blank" rel="noopener">🗺️ Googleマップで経路案内</a>'+
 '<div class="row"><span class="date">'+App.escape(h.date||'')+'</span><button class="del">削除</button></div>';
 return d;
 }
@@ -661,7 +661,7 @@ setTimeout(function(){ map.invalidateSize(); }, 300);
    const recorded=list.filter(r=>r.status).length;
    document.getElementById('aptSummary').textContent='記録あり '+recorded+' / '+list.length+'室 ・ 未記録 '+(list.length-recorded)+'室（訪問完了の割合ではありません）';
    document.getElementById('aptTitle').textContent=a.shared?'共有のアパート／マンション':'アパート／マンション';
-   document.getElementById('aptGmap').href='https://www.google.com/maps/dir/?api=1&destination='+a.lat+','+a.lng+'&travelmode=walking';
+   document.getElementById('aptGmap').href='https://www.google.com/maps/dir/?api=1&destination='+a.lat+','+a.lng+'&travelmode=driving';
    document.querySelector('.addroom').hidden=!!a.shared;document.getElementById('aptDel').hidden=!!a.shared;
    const body=document.getElementById('roomBody');body.replaceChildren();
    if(!list.length){body.textContent='部屋番号を入力してください。101,102 のようにまとめて追加できます。';return;}
