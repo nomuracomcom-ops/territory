@@ -103,7 +103,7 @@ window.Records = (() => {
     const rows=entries(), today=localDay(), summary=summarize(rows,today);
     const ref=new URLSearchParams(location.search).get('t')||'1';
     const territory=window.Territory?Territory.number(ref):ref;
-    document.getElementById('recordsScope').textContent='区域 '+territory+' · この端末の家・部屋の記録';
+    document.getElementById('recordsScope').textContent='区域 '+territory+' '+(window.Territory?.get(ref)?.name || '')+' · この区域だけの記録';
     document.getElementById('todayVisits').textContent=summary.total;
     const stats=document.getElementById('visitStats');stats.replaceChildren();
     for (const key of activity) {
