@@ -275,3 +275,39 @@ test('house popup is the report entry and hides notes only for do-not-visit stat
  assert.equal(JSON.parse(a.data.get('terr-2-23-1'))[0].memo,'端末の個人メモ');
  a.click('btnAdd');assert.equal(a.context.App.mode,'btnAdd');
 });
+
+test('map visit menu stays within its territory while global records and backup stay on home',async()=>{
+ const day='2026-10-29';
+ const saved={
+  'terr-4':JSON.stringify([{id:401,lat:34,lng:136,status:'revisit',date:day,memo:'現在区域の訪問先'}]),
+  'terr-1':JSON.stringify([{id:101,lat:34,lng:136,status:'revisit',date:day,memo:'別区域の訪問先'}]),
+  'svc-log':JSON.stringify([{id:901,start:Date.now()-60000,end:Date.now(),min:1,date:day,terr:'1'}])
+ };
+ const a=app('4',undefined,saved);await a.flush();const before=Object.fromEntries(a.data);a.click('btnList');
+ const sheet=a.document.getElementById('sheet');
+ assert.match(sheet.querySelector('h3').textContent,/この区域の訪問記録/);
+ assert.match(a.document.getElementById('recordsScope').textContent,/区域 4 桔梗が丘1番町D/);
+ assert.match(a.document.getElementById('listBody').textContent,/現在区域の訪問先/);
+ assert.doesNotMatch(a.document.getElementById('listBody').textContent,/別区域の訪問先/);
+ assert.equal(sheet.querySelector('#backupAll'),null);assert.equal(sheet.querySelector('#svcBody'),null);
+ assert.equal(sheet.querySelector('[onclick*="requestServiceReset"]'),null);
+ assert.equal(sheet.querySelector('.records-home-link').getAttribute('href'),'./');
+ assert.ok(a.document.querySelector('#homeBackupTools #backupAll'));
+ assert.ok(sheet.querySelector('#cleanupRecords'));assert.deepEqual(Object.fromEntries(a.data),before);
+ const h=app(null,undefined,saved);await h.flush();
+ assert.match(h.document.getElementById('homeRevisits').textContent,/現在区域の訪問先/);
+ assert.match(h.document.getElementById('homeRevisits').textContent,/別区域の訪問先/);
+ assert.equal(h.document.querySelectorAll('.home-service-row').length,1);
+ assert.equal(h.document.getElementById('backupAll').closest('#personalHome').hidden,false);
+ assert.equal(JSON.parse(h.data.get('svc-log')).length,1);
+});
+
+test('service history moved to home can delete one entry without changing visits or other times',async()=>{
+ const stamp=Date.now(),day=new Date().toISOString().slice(0,10);
+ const visits=JSON.stringify([{id:5,lat:34,lng:136,status:'revisit',date:day,memo:'保持する'}]);
+ const saved={'terr-4':visits,'svc-log':JSON.stringify([{id:61,start:stamp-120000,end:stamp-60000,min:1,date:day,terr:'4'},{id:62,start:stamp-60000,end:stamp,min:1,date:day,terr:'1'}])};
+ const a=app(null,undefined,saved);await a.flush();const button=a.document.querySelector('.home-service-delete');
+ a.context.confirm=()=>false;button.click();assert.equal(JSON.parse(a.data.get('svc-log')).length,2);
+ a.context.confirm=()=>true;button.click();assert.equal(JSON.parse(a.data.get('svc-log')).length,1);
+ assert.equal(a.data.get('terr-4'),visits);assert.equal(a.document.querySelectorAll('.home-service-row').length,1);
+});
