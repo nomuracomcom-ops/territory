@@ -149,7 +149,16 @@ window.Personal = (() => {
       const row=el('div','home-service-row');
       const text=el('span','home-map-text');text.appendChild(el('strong','',Records.displayDate(x.date)));
       const time=ms=>{const d=new Date(ms);return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');};
-      text.appendChild(el('small','',time(x.start)+'〜'+time(x.end)+(x.terr?' · 区域 '+Territory.number(x.terr):'')));row.appendChild(text);row.appendChild(el('strong','',duration(x.min)));host.appendChild(row);
+      text.appendChild(el('small','',time(x.start)+'〜'+time(x.end)+(x.terr?' · 区域 '+Territory.number(x.terr):'')));row.appendChild(text);row.appendChild(el('strong','',duration(x.min)));
+      const remove=el('button','home-service-delete','削除');remove.type='button';remove.setAttribute('aria-label',Records.displayDate(x.date)+' '+time(x.start)+'からの奉仕時間を削除');
+      remove.onclick=()=>{
+        if(!confirm(Records.displayDate(x.date)+' '+time(x.start)+'〜'+time(x.end)+'（'+duration(x.min)+'）の奉仕時間を削除しますか？'))return;
+        try{
+          const expected=localStorage.getItem('svc-log'),current=read('svc-log',[]);
+          if(current.filter(v=>v.id===x.id).length!==1)throw Error('記録が更新されています。再読み込みして確認してください。');
+          App.storeBatch({'svc-log':JSON.stringify(current.filter(v=>v.id!==x.id))},{'svc-log':expected});renderService();
+        }catch(e){alert('奉仕時間を削除できませんでした。'+e.message);}
+      };row.appendChild(remove);host.appendChild(row);
     }
     const active=safeRead('svc-active',null),resume=document.getElementById('homeActive');resume.hidden=!active;
     if(active){resume.href=mapLink(active.terr);resume.textContent='● 区域 '+Territory.number(active.terr)+' で伝道中 · 地図に戻る →';}
@@ -193,7 +202,6 @@ window.Personal = (() => {
     document.querySelector('header .no').textContent='✿ ききょう';document.querySelector('header .name').textContent='桔梗が丘会衆';
     document.getElementById('count').hidden=true;document.getElementById('btnHome').hidden=true;
     document.getElementById('personalHome').hidden=false;
-    document.getElementById('homeBackupTools').appendChild(document.querySelector('.backup-tools'));
     document.getElementById('homeSync').appendChild(document.querySelector('.sync-panel'));
     document.getElementById('homeMonth').value=Records.localDay().slice(0,7);
     document.getElementById('homeMonth').onchange=renderService;
