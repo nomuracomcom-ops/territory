@@ -169,8 +169,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 </section>
 <details class="records-details kikyo-links"><summary>会衆サイト</summary><a id="congregationSite" class="congregation-site" href="https://sites.google.com/view/kikyogaoka/%E3%83%9B%E3%83%BC%E3%83%A0" target="_blank" rel="noopener noreferrer">桔梗が丘会衆サイト <span aria-hidden="true">↗</span><span class="visually-hidden">（別タブで開きます）</span></a>
 </details><details class="records-details home-settings"><summary>バックアップ・データの確認</summary>
-<p class="privacy-note">再訪問・奉仕時間・使った地図は、この端末に保存されます。</p>
-<div id="homeBackupTools"></div><div id="homeSync"></div>
+<p class="privacy-note">訪問記録・再訪問・奉仕時間・使った地図は、この端末に保存されます。</p>
+<div id="homeBackupTools"><div class="backup-tools"><button id="backupAll">全記録をバックアップ</button><button id="restoreAll">全記録を復元</button><input id="backupFile" type="file" accept="application/json" hidden><p id="backupStatus">定期的にバックアップしてください。</p></div></div><div id="homeSync"></div>
 </details>
 </div>
 </main>
@@ -198,7 +198,7 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 
 <div class="sheet" id="sheet">
 <div class="card">
-<h3>訪問記録 <button class="x" id="sheetX" type="button" aria-label="記録を閉じる">✕</button></h3>
+<h3>この区域の訪問記録 <button class="x" id="sheetX" type="button" aria-label="記録を閉じる">✕</button></h3>
 <p class="records-scope" id="recordsScope"></p>
 <section class="visit-summary" aria-labelledby="visitSummaryTitle">
 <h4 id="visitSummaryTitle">今日の振り返り</h4>
@@ -213,17 +213,10 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <label class="record-search">メモ・建物・部屋を検索<input id="recordSearch" type="search" placeholder="メモや部屋番号" autocomplete="off"></label>
 <p class="records-footnote" id="recordResultCount" role="status"></p>
 <div id="listBody"></div>
+<p class="records-home-note">全区域の再訪問・奉仕時間・使った地図は、ホームで確認できます。</p>
+<a class="records-home-link" href="./">⌂ ホームへ</a>
 <details class="records-details">
-<summary>奉仕時間・履歴 <small>全区域・この端末</small></summary>
-<div class="svc-sum" id="svcSum"></div>
-<div id="svcBody"></div>
-<button type="button" onclick="Personal.requestServiceReset('all')">すべての奉仕時間をリセット</button>
-<button type="button" onclick="Personal.requestServiceReset('timer')">計測中の時間を0分からやり直す</button>
-</details>
-<details class="records-details">
-<summary>バックアップ・記録の整理</summary>
-<p class="privacy-note">家・部屋の訪問記録と奉仕時間は、この端末だけに保存されます。</p>
-<div class="backup-tools"><button id="backupAll">全記録をバックアップ</button><button id="restoreAll">全記録を復元</button><input id="backupFile" type="file" accept="application/json" hidden><p id="backupStatus">定期的にバックアップしてください。</p></div>
+<summary>この区域の記録を整理・保存</summary>
 <div class="tools">
 <button id="btnExport">この区域の戸建て記録を書き出し</button>
 <button id="btnImport">読み込み</button>
@@ -288,8 +281,8 @@ border-radius:6px;padding:8px;font-size:13px;font-weight:600;}
 <script src="territories.js?v=20261008-kuramochiB"></script>
 <script>(function(){try{if(window.L&&L.map&&!L.__ap){L.__ap=1;var o=L.map;L.map=function(){var m=o.apply(this,arguments);window.__LMAP=m;return m;};}}catch(e){}})();</script>
 <script src="app-core.js?v=20261019-offline1"></script>
-<script src="records.js?v=20261001-ui2"></script>
-<script src="personal.js?v=20261017-kikyo-home"></script>
+<script src="records.js?v=20261029-record-scope1"></script>
+<script src="personal.js?v=20261029-record-scope1"></script>
 <script>
 const REQUEST_LEDGER='https://kikyogaoka-companions.balmy-titan-5521.chatgpt.site/report';
 const TERR_REF = (new URLSearchParams(location.search).get('t')||'home');
@@ -483,7 +476,7 @@ document.getElementById('btnAll').onclick=function(){ location.search='?t=all'; 
 
 // ---- 一覧シート ----
 const sheet=document.getElementById('sheet');
-document.getElementById('btnList').onclick=function(){renderSvc();renderList();sheet.style.display='flex';};
+document.getElementById('btnList').onclick=function(){renderList();sheet.style.display='flex';};
 document.getElementById('sheetX').onclick=function(){sheet.style.display='none';document.getElementById('btnList').focus();};
 sheet.addEventListener('keydown',function(e){if(e.key==='Escape'){sheet.style.display='none';document.getElementById('btnList').focus();}});
 sheet.onclick=function(e){if(e.target===sheet)sheet.style.display='none';};
@@ -515,7 +508,7 @@ const n=Records.entries().filter(function(h){return h.status==='revisit';}).leng
 if(n===0){ el.style.display='none'; el.onclick=null; refreshMap(); return; }
 el.innerHTML='<span class="ic">🔔</span><span>再訪問の記録が <b>'+n+'</b> 件あります</span><span class="go">一覧で見る ›</span>';
 el.style.display='flex';
-el.onclick=function(){ renderSvc();renderList('revisit'); sheet.style.display='flex'; };
+el.onclick=function(){ renderList('revisit'); sheet.style.display='flex'; };
 refreshMap();
 }
 
@@ -545,7 +538,7 @@ document.getElementById('doneVerse').innerHTML='<span class="q">'+v.q+'</span><s
 document.getElementById('done').style.display='flex';
 }
 document.getElementById('doneClose').onclick=function(){document.getElementById('done').style.display='none';};
-document.getElementById('doneReview').onclick=function(){document.getElementById('done').style.display='none';renderSvc();renderList('today');sheet.style.display='flex';};
+document.getElementById('doneReview').onclick=function(){document.getElementById('done').style.display='none';renderList('today');sheet.style.display='flex';};
 document.getElementById('done').onclick=function(e){if(e.target===this)this.style.display='none';};
 
 function refreshMap(){ setTimeout(function(){ map.invalidateSize(); }, 60); }
@@ -594,29 +587,7 @@ svcBtn.onclick=function(){
   }
 };
 
-function renderSvc(){
-  const log=svcLoad().slice().sort(function(a,b){return b.start-a.start;});
-  const now=new Date(); const ym=now.getFullYear()+'-'+pad2(now.getMonth()+1);
-  const thisM=log.filter(function(x){return (x.date||'').slice(0,7)===ym;});
-  const days=new Set(thisM.map(function(x){return x.date;})).size;
-  const mins=thisM.reduce(function(s,x){return s+(x.min||0);},0);
-  document.getElementById('svcSum').innerHTML='今月の奉仕：<b>'+days+'</b> 日 ・ 合計 <b>'+fmtDur(mins)+'</b>';
-  const b=document.getElementById('svcBody');
-  if(!log.length){ b.innerHTML='<div class="empty">まだ奉仕記録がありません。「▶ 伝道スタート」を押すと記録が始まります。</div>'; return; }
-  b.innerHTML=log.map(function(x){
-    return '<div class="svc-item"><div><div class="d">'+fmtDate(x.start)+'　'+fmtTime(x.start)+'〜'+fmtTime(x.end)+'</div>'+
-      '<div class="sub">'+fmtDur(x.min)+(x.terr?' ・ 区域'+Territory.number(x.terr):'')+'</div></div>'+
-      '<button class="svc-del" data-id="'+x.id+'">×</button></div>';
-  }).join('');
-  b.querySelectorAll('.svc-del').forEach(function(btn){
-    btn.onclick=function(){
-      if(!confirm('この奉仕記録を削除しますか？')) return;
-      const id=parseInt(btn.dataset.id,10);
-      svcSave(svcLoad().filter(function(x){return x.id!==id;}));
-      renderSvc();
-    };
-  });
-}
+
 svcPaint();
 
 render();
